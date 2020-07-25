@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entreate</title>
+    <link rel="stylesheet" type="text/css" href="./entreate.css">
+
+    <style>
+
+      * {
+        box-sizing: border-box;
+        font-family: Verdana;
+      }
+
+      .content {
+        margin: 0 auto;
+        max-width: 512px;
+      }
+
+    </style>
+  </head>
+
+  <body>
+
+    <div class='content'></div>
+
+    <script type='module'>
+
+      import { Entreate } from './entreate.js';
+
+      (async () => {
+
+        if (window.opener) {
+          window.addEventListener('message', (message) => {
+            if (message.data.command === 'run') {
+              render(message.data.items);
+            }
+          });
+
+          window.opener.postMessage('child-ready');
+        }
+        else {
+          render();
+        }
+
+      })();
+
+      function render(items) {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const gemDir = urlParams.get('dir');
+        const token = urlParams.get('access_token');
+        const entreate = Entreate(gemDir, token);
+        const content = document.querySelector('.content');
+        content.appendChild(entreate.dom);
+      }
+
+    </script>
+  </body>
+
+</html>
