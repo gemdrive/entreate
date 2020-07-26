@@ -24,6 +24,7 @@
 
     <div class='content'></div>
 
+    <script src='https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-auth-client@0.8.0/dist/umd.js'></script>
     <script type='module'>
 
       import { Entreate } from './entreate.js';
@@ -45,15 +46,49 @@
 
       })();
 
-      function render(items) {
+      async function render(items) {
 
         const urlParams = new URLSearchParams(window.location.search);
 
-        const gemDir = urlParams.get('dir');
-        const token = urlParams.get('access_token');
-        const entreate = Entreate(gemDir, token);
+        if (urlParams.has('code') && urlParams.has('state')) {
+          const { accessToken, state } = await window.gemdriveAuthClient.completeAuthorization();
+          localStorage.setItem('access_token', accessToken);
+        }
+
+        const token = localStorage.getItem('access_token');
+
+        let driveUri = urlParams.get('drive');
+        if (!driveUri) {
+          driveUri = prompt("Enter a drive URI");
+          urlParams.set('drive', driveUri);
+          history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
+        }
+
+        let path = urlParams.get('path');
+        if (!path) {
+          path = prompt(`Enter a path to the entreate directory on ${driveUri}`);
+          urlParams.set('path', path);
+          history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
+        }
+
+        const entreateEl = Entreate(driveUri, path, token);
+
+        entreateEl.addEventListener('do-auth', (e) => {
+          gemdriveAuthClient.authorize({
+            driveUri,
+            perms: [
+              {
+                type: 'dir',
+                perm: 'write',
+                path,
+              },
+            ],
+            state: driveUri,
+          });
+        });
+
         const content = document.querySelector('.content');
-        content.appendChild(entreate.dom);
+        content.appendChild(entreateEl);
       }
 
     </script>

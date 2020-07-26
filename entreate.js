@@ -1,4 +1,4 @@
-function Entreate(gemDir, token) {
+function Entreate(driveUri, path, token) {
   const dom = document.createElement('div');
   dom.classList.add('entreate');
 
@@ -6,24 +6,34 @@ function Entreate(gemDir, token) {
   dom.appendChild(entryCreator.dom);
 
   entryCreator.dom.addEventListener('create-entry', (e) => {
-    createEntry(gemDir, token, e.detail.text, e.detail.meta);
+    createEntry(dom, driveUri, path, token, e.detail.text, e.detail.meta);
   });
 
-  return {
-    dom,
-  };
+  return dom;
 }
 
-async function createEntry(gemDir, token, text, meta) {
+async function createEntry(dom, driveUri, path, token, text, meta) {
 
-  let gemUrl = gemDir + 'entries/.gemdrive-ls.tsv';
+  let gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
   if (token) {
     gemUrl += '?access_token=' + token;
   }
 
   const response = await fetch(gemUrl);
 
-  if (response.status !== 200) {
+  if (response.status === 403) {
+    const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
+
+    if (doAuth) {
+      dom.dispatchEvent(new CustomEvent('do-auth', {
+        bubbles: true,
+      }));
+    }
+
+    return;
+  }
+  else if (response.status !== 200) {
+    alert("Failed for unknown reason");
     return;
   }
 
@@ -37,7 +47,7 @@ async function createEntry(gemDir, token, text, meta) {
     nextId = lastId + 1;
   }
 
-  const entryUrl = gemDir + `entries/${nextId}/`;
+  const entryUrl = driveUri + path + `entries/${nextId}/`;
 
   let createDirUrl = entryUrl;
   if (token) {
