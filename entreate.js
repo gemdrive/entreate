@@ -29,6 +29,15 @@ function Entreate(driveUri, path, token) {
 
       tags = [];
     }
+    else if (response.status === 403) {
+      const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
+
+      if (doAuth) {
+        dom.dispatchEvent(new CustomEvent('do-auth', {
+          bubbles: true,
+        }));
+      }
+    }
     else {
       tags = await response.json();
     }
