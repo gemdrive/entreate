@@ -8,30 +8,67 @@ function Entreate(driveUri, path, token) {
   const dom = document.createElement('div');
   dom.classList.add('entreate');
 
-  const entryCreator = EntryCreator();
-  dom.appendChild(entryCreator.dom);
-
-  entryCreator.dom.addEventListener('create-entry', (e) => {
-    createEntry(dom, driveUri, path, token, e.detail.text, e.detail.meta);
-  });
-
-  return dom;
-}
-
-async function createEntry(dom, driveUri, path, token, text, meta) {
-
   const headers = {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
+  const tagsUrl = driveUri + path + 'tags.json';
 
-  const response = await fetch(gemUrl, {
+  fetch(tagsUrl, {
     headers,
+  }).then(async (response) => {
+
+    let tags;
+    if (response.status === 404) {
+      await fetch(tagsUrl, {
+        method: 'PUT',
+        headers,
+        body: '[]',
+      });
+
+      tags = [];
+    }
+    else {
+      tags = await response.json();
+    }
+
+    const entryCreator = EntryCreator(tags);
+    dom.appendChild(entryCreator.dom);
+
+    entryCreator.dom.addEventListener('create-entry', (e) => {
+      createEntry(dom, driveUri, path, headers, e.detail.text, e.detail.meta);
+    });
+
+    entryCreator.dom.addEventListener('create-tag', (e) => {
+      tags.push(e.detail.tag);
+
+      entryCreator.updateTags(tags);
+
+      fetch(tagsUrl, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(tags),
+      });
+    });
   });
 
-  if (response.status === 403) {
+  return dom;
+}
+
+async function createEntry(dom, driveUri, path, headers, text, meta) {
+
+  const gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
+
+  const promises = [
+    fetch(gemUrl, {
+      headers,
+    }),
+  ];
+
+  const [ gemReponse ] = await Promise.all(promises);
+
+  if (gemReponse.status === 403) {
     const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
 
     if (doAuth) {
@@ -42,12 +79,14 @@ async function createEntry(dom, driveUri, path, token, text, meta) {
 
     return;
   }
-  else if (response.status !== 200) {
+  else if (gemReponse.status !== 200) {
     alert("Failed for unknown reason");
     return;
   }
 
-  const tsv = await response.text();
+  
+
+  const tsv = await gemReponse.text();
   const gemData = parseGemData(tsv);
 
   let nextId = 1;
@@ -62,6 +101,7 @@ async function createEntry(dom, driveUri, path, token, text, meta) {
 
   let createDirUrl = entryUrl;
 
+  // need to await directory creation before proceeding
   await fetch(createDirUrl, {
     method: 'PUT',
     headers,
@@ -69,7 +109,7 @@ async function createEntry(dom, driveUri, path, token, text, meta) {
 
   let entryFileUrl = entryUrl + 'entry.md';
 
-  await fetch(entryFileUrl, {
+  fetch(entryFileUrl, {
     method: 'PUT',
     headers,
     body: text,
@@ -77,7 +117,7 @@ async function createEntry(dom, driveUri, path, token, text, meta) {
 
   let metaFileUrl = entryUrl + 'entry.json';
 
-  await fetch(metaFileUrl, {
+  fetch(metaFileUrl, {
     method: 'PUT',
     headers,
     body: JSON.stringify(meta),
@@ -96,7 +136,7 @@ function parseGemData(tsv) {
 }
 
 
-function EntryCreator() {
+function EntryCreator(inTags) {
   const dom = el('div');
   dom.classList.add('entreate-entry-creator');
 
@@ -110,9 +150,9 @@ function EntryCreator() {
   dom.appendChild(titleInput);
 
   let tags = [];
-  const tagEditor = TagEditor();
-  dom.appendChild(tagEditor);
-  tagEditor.addEventListener('tags-changed', (e) => {
+  const tagEditor = TagEditor(inTags);
+  dom.appendChild(tagEditor.dom);
+  tagEditor.dom.addEventListener('tags-changed', (e) => {
     tags = e.detail.tags;
   });
 
@@ -140,10 +180,11 @@ function EntryCreator() {
 
   return {
     dom,
+    updateTags: tagEditor.updateTags,
   };
 }
 
-function TagEditor() {
+function TagEditor(inTags) {
   const dom = el('div');
   dom.classList.add('tag-editor');
 
@@ -155,14 +196,45 @@ function TagEditor() {
   tagList.classList.add('tag-editor__tag-list');
   dom.appendChild(tagList);
 
-  const input = el('input');
-  input.setAttribute('type', 'text');
-  dom.appendChild(input);
-
   let tags = [];
-  const addBtn = el('button', {
-    onclick: (e) => {
-      const tagName = input.value;
+
+  let select = TagSelect(inTags, tags, tagList);
+  dom.appendChild(select);
+
+
+  function updateTags(newTags) {
+    const newSelect = TagSelect(newTags, tags, tagList);
+    dom.replaceChild(newSelect, select);
+    select = newSelect;
+  }
+
+  return {
+    dom,
+    updateTags,
+  };
+}
+
+function TagSelect(inTags, tags, tagList) {
+  const select = el('select', {
+    onchange: (e) => {
+      let tagName = select.value;
+
+      select.value = 'choose';
+
+      if (tagName === 'create') {
+        const newTag = prompt("Enter a tag");
+        if (newTag && !inTags.includes(newTag)) {
+          select.dispatchEvent(new CustomEvent('create-tag', {
+            bubbles: true,
+            detail: {
+              tag: newTag,
+            },
+          }));
+        }
+
+        tagName = newTag;
+      }
+
       if (tagName && !tags.includes(tagName)) {
         const tag = el('div', {
           onclick: (e) => {
@@ -180,11 +252,24 @@ function TagEditor() {
       }
     },
   });
-  addBtn.innerText = "Add Tag";
-  dom.appendChild(addBtn);
+
+  const firstOption = el('option');
+  firstOption.value = 'choose';
+  firstOption.innerText = "Select a tag";
+  select.appendChild(firstOption);
+  for (const tag of inTags) {
+    const option = el('option');
+    option.setAttribute('value', tag);
+    option.innerText = tag;
+    select.appendChild(option);
+  }
+  const addTagOption = el('option');
+  addTagOption.setAttribute('value', 'create');
+  addTagOption.innerText = "New tag";
+  select.appendChild(addTagOption);
 
   function notifyChanged() {
-    dom.dispatchEvent(new CustomEvent('tags-changed', {
+    select.dispatchEvent(new CustomEvent('tags-changed', {
       bubbles: true,
       detail: {
         tags,
@@ -192,9 +277,8 @@ function TagEditor() {
     }));
   }
 
-  return dom;
+  return select;
 }
-
 
 function el(elType, options) {
   const dom = document.createElement(elType);
