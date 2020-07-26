@@ -198,14 +198,47 @@ function TagEditor(inTags) {
 
   let tags = [];
 
-  let select = TagSelect(inTags, tags, tagList);
+  let select = TagSelect(inTags);
+  wireSelect();
   dom.appendChild(select);
 
+  function notifyChanged() {
+    select.dispatchEvent(new CustomEvent('tags-changed', {
+      bubbles: true,
+      detail: {
+        tags,
+      },
+    }));
+  }
+
+  function wireSelect() {
+    select.addEventListener('tag-selected', (e) => {
+
+    const tagName = e.detail.tagName;
+
+    if (tagName && !tags.includes(tagName)) {
+      const tag = el('div', {
+        onclick: (e) => {
+          tagList.removeChild(tag);
+          tags = tags.filter(t => t !== tagName);
+          notifyChanged();
+        },
+      });
+      tag.classList.add('tag-editor__tag');
+      tag.innerText = tagName;
+      tagList.appendChild(tag);
+
+      tags.push(tagName);
+      notifyChanged();
+    }
+  });
+  }
 
   function updateTags(newTags) {
-    const newSelect = TagSelect(newTags, tags, tagList);
+    const newSelect = TagSelect(newTags);
     dom.replaceChild(newSelect, select);
     select = newSelect;
+    wireSelect();
   }
 
   return {
@@ -214,9 +247,10 @@ function TagEditor(inTags) {
   };
 }
 
-function TagSelect(inTags, tags, tagList) {
+function TagSelect(inTags) {
   const select = el('select', {
     onchange: (e) => {
+
       let tagName = select.value;
 
       select.value = 'choose';
@@ -230,26 +264,21 @@ function TagSelect(inTags, tags, tagList) {
               tag: newTag,
             },
           }));
+
+          tagName = newTag;
         }
-
-        tagName = newTag;
+        else {
+          alert("Tag already exists");
+          return;
+        }
       }
 
-      if (tagName && !tags.includes(tagName)) {
-        const tag = el('div', {
-          onclick: (e) => {
-            tagList.removeChild(tag);
-            tags = tags.filter(t => t !== tagName);
-            notifyChanged();
-          },
-        });
-        tag.classList.add('tag-editor__tag');
-        tag.innerText = tagName;
-        tagList.appendChild(tag);
-
-        tags.push(tagName);
-        notifyChanged();
-      }
+      select.dispatchEvent(new CustomEvent('tag-selected', {
+        bubbles: true,
+        detail: {
+          tagName,
+        },
+      }));
     },
   });
 
@@ -267,15 +296,6 @@ function TagSelect(inTags, tags, tagList) {
   addTagOption.setAttribute('value', 'create');
   addTagOption.innerText = "New tag";
   select.appendChild(addTagOption);
-
-  function notifyChanged() {
-    select.dispatchEvent(new CustomEvent('tags-changed', {
-      bubbles: true,
-      detail: {
-        tags,
-      },
-    }));
-  }
 
   return select;
 }
