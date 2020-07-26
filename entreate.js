@@ -1,3 +1,9 @@
+// https://stackoverflow.com/a/38641281/943814
+const naturalSorter = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: 'base'
+});
+
 function Entreate(driveUri, path, token) {
   const dom = document.createElement('div');
   dom.classList.add('entreate');
@@ -14,12 +20,16 @@ function Entreate(driveUri, path, token) {
 
 async function createEntry(dom, driveUri, path, token, text, meta) {
 
-  let gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
+  const headers = {};
   if (token) {
-    gemUrl += '?access_token=' + token;
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(gemUrl);
+  let gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
+
+  const response = await fetch(gemUrl, {
+    headers,
+  });
 
   if (response.status === 403) {
     const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
@@ -42,39 +52,34 @@ async function createEntry(dom, driveUri, path, token, text, meta) {
 
   let nextId = 1;
   if (gemData.length > 0) {
-    console.log(gemData);
-    const lastId = Number(gemData[gemData.length - 1].name.slice(0, -1));
+    const sortedGemData = gemData.slice()
+      .sort((a, b) => naturalSorter.compare(a.name, b.name));
+    const lastId = Number(sortedGemData[sortedGemData.length - 1].name.slice(0, -1));
     nextId = lastId + 1;
   }
 
   const entryUrl = driveUri + path + `entries/${nextId}/`;
 
   let createDirUrl = entryUrl;
-  if (token) {
-    createDirUrl += '?access_token=' + token;
-  }
 
   await fetch(createDirUrl, {
     method: 'PUT',
+    headers,
   });
 
   let entryFileUrl = entryUrl + 'entry.md';
-  if (token) {
-    entryFileUrl += '?access_token=' + token;
-  }
 
   await fetch(entryFileUrl, {
     method: 'PUT',
+    headers,
     body: text,
   });
 
   let metaFileUrl = entryUrl + 'entry.json';
-  if (token) {
-    metaFileUrl += '?access_token=' + token;
-  }
 
   await fetch(metaFileUrl, {
     method: 'PUT',
+    headers,
     body: JSON.stringify(meta),
   });
 }
