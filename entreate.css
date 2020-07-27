@@ -1,12 +1,20 @@
+:root {
+  --border: 1px solid #777;
+}
+
 .entreate-entry-creator__text-input {
+  padding: 5px;
   min-width: 100%;
   max-width: 100%;
   min-height: 300px;
+  border: var(--border);
+  font-family: Courier New, Monospace;
+  font-size: 16px;
 }
 
 .tag-editor {
   padding: 10px;
-  border: 1px solid #777;
+  border: var(--border);
 }
 .tag-editor__tag-list {
   display: flex;
@@ -17,4 +25,16 @@
   padding: 2px 5px;
   border-radius: 5px;
   background-color: #ccc;
+}
+
+.value-input {
+  padding: 10px;
+  border: var(--border);
+}
+.value-input__label {
+  margin: 0 5px;
+}
+
+.margin-box {
+  margin: 5px 0;
 }

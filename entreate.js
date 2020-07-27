@@ -149,25 +149,19 @@ function EntryCreator(inTags) {
   const dom = el('div');
   dom.classList.add('entreate-entry-creator');
 
-  const titleInputLabel = el('span');
-  titleInputLabel.innerText = "Title:";
-  dom.appendChild(titleInputLabel);
-
-  const titleInput = el('input');
-  titleInput.setAttribute('type', 'text');
-  titleInput.classList.add('entreate-entry-creator__title-input');
-  dom.appendChild(titleInput);
+  const titleInput = ValueInput('Title');
+  dom.appendChild(MarginBox(titleInput.dom));
 
   let tags = [];
   const tagEditor = TagEditor(inTags);
-  dom.appendChild(tagEditor.dom);
+  dom.appendChild(MarginBox(tagEditor.dom));
   tagEditor.dom.addEventListener('tags-changed', (e) => {
     tags = e.detail.tags;
   });
 
   const textInput = el('textarea');
   textInput.classList.add('entreate-entry-creator__text-input');
-  dom.appendChild(textInput);
+  dom.appendChild(MarginBox(textInput));
 
   const submitButton = el('button', {
     onclick: (e) => {
@@ -176,7 +170,7 @@ function EntryCreator(inTags) {
         detail: {
           text: textInput.value,
           meta: {
-            title: titleInput.value,
+            title: titleInput.getValue(),
             tags,
           }
         },
@@ -190,6 +184,29 @@ function EntryCreator(inTags) {
   return {
     dom,
     updateTags: tagEditor.updateTags,
+  };
+}
+
+function ValueInput(name) {
+  const dom = el('div');
+  dom.classList.add('value-input');
+
+  const labelEl = el('span');
+  labelEl.classList.add('value-input__label');
+  labelEl.innerText = `${name}:`;
+  dom.appendChild(labelEl);
+
+  const inputEl = el('input');
+  inputEl.setAttribute('type', 'text');
+  dom.appendChild(inputEl);
+
+  function getValue() {
+    return inputEl.value;
+  }
+
+  return {
+    dom,
+    getValue,
   };
 }
 
@@ -307,6 +324,13 @@ function TagSelect(inTags) {
   select.appendChild(addTagOption);
 
   return select;
+}
+
+function MarginBox(child) {
+  const dom = el('div');
+  dom.classList.add('margin-box');
+  dom.appendChild(child);
+  return dom;
 }
 
 function el(elType, options) {
