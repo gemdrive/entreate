@@ -67,17 +67,17 @@ function Entreate(driveUri, path, token) {
 
 async function createEntry(dom, driveUri, path, headers, text, meta) {
 
-  const gemUrl = driveUri + path + 'entries/.gemdrive-ls.tsv';
+  const date = new Date().toISOString().split('.')[0];
+  const yearMonth = date.slice(0, 7);
+  const day = date.slice(8, 10);
 
-  const promises = [
-    fetch(gemUrl, {
-      headers,
-    }),
-  ];
+  const createDateDirUrl = driveUri + path + `entries/${yearMonth}/`;
+  const dateResponse = await fetch(createDateDirUrl, {
+    method: 'PUT',
+    headers,
+  });
 
-  const [ gemReponse ] = await Promise.all(promises);
-
-  if (gemReponse.status === 403) {
+  if (dateResponse.status === 403) {
     const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
 
     if (doAuth) {
@@ -88,25 +88,24 @@ async function createEntry(dom, driveUri, path, headers, text, meta) {
 
     return;
   }
-  else if (gemReponse.status !== 200) {
-    alert("Failed for unknown reason");
-    return;
-  }
 
-  
 
+  const gemUrl = driveUri + path + `entries/${yearMonth}/.gemdrive-ls.tsv`;
+
+  const promises = [
+    fetch(gemUrl, {
+      headers,
+    }),
+  ];
+
+  const [ gemReponse ] = await Promise.all(promises);
   const tsv = await gemReponse.text();
   const gemData = parseGemData(tsv);
 
-  let nextId = 1;
-  if (gemData.length > 0) {
-    const sortedGemData = gemData.slice()
-      .sort((a, b) => naturalSorter.compare(a.name, b.name));
-    const lastId = Number(sortedGemData[sortedGemData.length - 1].name.slice(0, -1));
-    nextId = lastId + 1;
-  }
+  const name = date + '-' + meta.title;
+  const nextEntryName = genNextEntryName(gemData, name);
 
-  const entryUrl = driveUri + path + `entries/${nextId}/`;
+  const entryUrl = driveUri + path + `entries/${yearMonth}/${nextEntryName}`;
 
   let createDirUrl = entryUrl;
 
@@ -131,6 +130,25 @@ async function createEntry(dom, driveUri, path, headers, text, meta) {
     headers,
     body: JSON.stringify(meta),
   });
+}
+
+function genNextEntryName(gemData, name) {
+
+  if (gemData.length === 0 || gemData.filter(e => e.name === name + '/').length === 0) {
+    return name.replace(/ /gi, '_') + '/';
+  }
+
+  let genName;
+  for (let i = 2; i < 1000; i++) {
+    const newName = (name + '_' + i + '/').replace(/ /gi, '_');
+    // TODO: not efficient
+    const filtered = gemData.filter(e => e.name === newName);
+    if (filtered.length === 0) {
+      return newName;
+    }
+  }
+
+  throw new Error("too many iterations");
 }
 
 function parseGemData(tsv) {
@@ -170,7 +188,7 @@ function EntryCreator(inTags) {
         detail: {
           text: textInput.value,
           meta: {
-            title: titleInput.getValue(),
+            title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
             tags,
           }
         },
