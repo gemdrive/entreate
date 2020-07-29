@@ -13,11 +13,19 @@ function Entreate(driveUri, path, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const tagsUrl = driveUri + path + 'tags.json';
+  const contentEl = el('div');
+  contentEl.appendChild(el('div'));
+  dom.appendChild(contentEl);
 
-  fetch(tagsUrl, {
-    headers,
-  }).then(async (response) => {
+
+  const entriesDirUrl = driveUri + path + 'entries/';
+
+  let newEntry = false;
+
+  async function navigate(page, data) {
+
+    const tagsUrl = driveUri + path + 'tags.json';
+    const response = await fetch(tagsUrl, { headers });
 
     let tags;
     if (response.status === 404) {
@@ -42,30 +50,243 @@ function Entreate(driveUri, path, token) {
       tags = await response.json();
     }
 
-    const entryCreator = EntryCreator(tags);
-    dom.appendChild(entryCreator.dom);
+    switch (page) {
+      case '/home': {
+        const entryList = EntryList(entriesDirUrl, headers);
+        contentEl.replaceChild(entryList, contentEl.firstChild);
 
-    entryCreator.dom.addEventListener('create-entry', (e) => {
-      createEntry(dom, driveUri, path, headers, e.detail.text, e.detail.meta);
-    });
+        entryList.addEventListener('entry-selected', (e) => {
+          navigate('/editor', e.detail);
+        });
 
-    entryCreator.dom.addEventListener('create-tag', (e) => {
-      tags.push(e.detail.tag);
+        entryList.addEventListener('create-entry', async (e) => {
 
-      entryCreator.updateTags(tags);
+          const entryUrl = await initEntry(dom, driveUri, path, headers);
 
-      fetch(tagsUrl, {
+          console.log(entryUrl);
+
+          navigate('/editor', {
+            entryUrl,
+            meta: {
+              tags: [],
+            },
+          });
+        });
+        break;
+      }
+      case '/editor':
+
+        let text = "";
+        const textResponse = await fetch(data.entryUrl + 'entry.md', { headers });
+        if (textResponse.status === 200) {
+          text = await textResponse.text();
+        }
+
+        const entryEditor = EntryEditor(data.entryUrl, text, data.meta, tags);
+        contentEl.replaceChild(entryEditor.dom, contentEl.firstChild);
+
+        entryEditor.dom.addEventListener('save', async (e) => {
+
+          console.log(e.detail);
+          const entryUrl = e.detail.entryUrl;
+          const text = e.detail.text;
+          const meta = e.detail.meta;
+
+          let entryFileUrl = entryUrl + 'entry.md';
+
+          fetch(entryFileUrl, {
+            method: 'PUT',
+            headers,
+            body: text,
+          });
+
+          let metaFileUrl = entryUrl + 'entry.json';
+
+          fetch(metaFileUrl, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(meta),
+          });
+        });
+
+        entryEditor.dom.addEventListener('close', (e) => {
+          navigate('/home');
+        });
+
+        entryEditor.dom.addEventListener('create-tag', (e) => {
+          tags.push(e.detail.tag);
+
+          entryEditor.updateTags(tags);
+
+          fetch(tagsUrl, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(tags),
+          });
+        });
+
+        break;
+    }
+  }
+
+  navigate('/home');
+
+  return dom;
+}
+
+
+function EntryList(entriesDirUrl, headers) {
+  const dom = el('div');
+  dom.classList.add('entry-list');
+
+  const desiredNumPosts = 10;
+
+  fetch(entriesDirUrl + '.gemdrive-ls.tsv', {
+    headers,
+  }).then(async (response) => {
+
+    if (response.status === 404) {
+      await fetch(entriesDirUrl, {
         method: 'PUT',
         headers,
-        body: JSON.stringify(tags),
       });
+      return;
+    }
+    else if (response.status === 403) {
+      const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
+
+      if (doAuth) {
+        dom.dispatchEvent(new CustomEvent('do-auth', {
+          bubbles: true,
+        }));
+      }
+      return;
+    }
+
+    const tsv = await response.text();
+    const gemData = parseGemData(tsv);
+
+    let numPosts = 0;
+    for (let i = gemData.length - 1; i >= 0 && numPosts < desiredNumPosts; i--) {
+      const monthDir = gemData[i];
+      const monthUrl = entriesDirUrl + monthDir.name;
+
+      const monthResponse = await fetch(monthUrl + '.gemdrive-ls.tsv', { headers });
+      const monthDirs = parseGemData(await monthResponse.text());
+
+      for (const entryDir of monthDirs) {
+        numPosts += 1;
+        const entryUrl = monthUrl + entryDir.name;
+        const entryEl = EntryListEntry(entryUrl, headers);
+        dom.appendChild(entryEl);
+      }
+    }
+
+    const createEntryButton = el('button', {
+      onclick: () => {
+        dom.dispatchEvent(new CustomEvent('create-entry', {
+          bubbles: true,
+        }));
+      },
     });
+    createEntryButton.innerText = "Create entry";
+    dom.appendChild(createEntryButton);
+  });
+
+
+  return dom;
+}
+
+function EntryListEntry(entryUrl, headers) {
+  const dom = el('div');
+  dom.classList.add('entry-list-item');
+
+  const metaUrl = entryUrl + 'entry.json';
+
+  const nameEl = el('div');
+  dom.appendChild(nameEl);
+
+  let meta;
+  fetch(metaUrl, { headers }).then(async (response) => {
+    meta = await response.json();
+    nameEl.innerText = meta.title;
+  });
+
+  const editButton = el('button');
+  editButton.innerText = "Edit";
+  dom.appendChild(editButton);
+
+  editButton.addEventListener('click', (e) => {
+    dom.dispatchEvent(new CustomEvent('entry-selected', {
+      bubbles: true,
+      detail: {
+        entryUrl,
+        meta,
+      },
+    }));
   });
 
   return dom;
 }
 
-async function createEntry(dom, driveUri, path, headers, text, meta) {
+
+function EntryEditor(entryUrl, text, meta, inTags) {
+  const dom = el('div');
+  dom.classList.add('entreate-entry-editor');
+
+  const homeButton = el('button', {
+    onclick: (e) => {
+      dom.dispatchEvent(new CustomEvent('close', {
+        bubbles: true,
+      }));
+    },
+  });
+  homeButton.innerText = 'Home';
+  dom.appendChild(homeButton);
+
+  const saveButton = el('button', {
+    onclick: (e) => {
+      dom.dispatchEvent(new CustomEvent('save', {
+        bubbles: true,
+        detail: {
+          entryUrl,
+          text: textInput.value,
+          meta: {
+            title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
+            tags,
+          }
+        },
+      }));
+    },
+  });
+  saveButton.classList.add('entreate-button', 'entreate-button-confirm');
+  saveButton.innerText = 'Save';
+  dom.appendChild(saveButton);
+
+  const titleInput = ValueInput('Title', meta.title);
+  dom.appendChild(MarginBox(titleInput.dom));
+
+  let tags = [];
+  const tagEditor = TagEditor(inTags, meta.tags);
+  dom.appendChild(MarginBox(tagEditor.dom));
+  tagEditor.dom.addEventListener('tags-changed', (e) => {
+    tags = e.detail.tags;
+  });
+
+  const textInput = el('textarea');
+  textInput.classList.add('entreate-entry-editor__text-input');
+  dom.appendChild(MarginBox(textInput));
+  textInput.value = text;
+
+
+  return {
+    dom,
+    updateTags: tagEditor.updateTags,
+  };
+}
+
+
+async function initEntry(dom, driveUri, path, headers) {
 
   const date = new Date().toISOString().split('.')[0];
   const yearMonth = date.slice(0, 7);
@@ -102,7 +323,8 @@ async function createEntry(dom, driveUri, path, headers, text, meta) {
   const tsv = await gemReponse.text();
   const gemData = parseGemData(tsv);
 
-  const name = date + '-' + meta.title;
+  //const name = date + '-' + meta.title;
+  const name = date;
   const nextEntryName = genNextEntryName(gemData, name);
 
   const entryUrl = driveUri + path + `entries/${yearMonth}/${nextEntryName}`;
@@ -120,16 +342,23 @@ async function createEntry(dom, driveUri, path, headers, text, meta) {
   fetch(entryFileUrl, {
     method: 'PUT',
     headers,
-    body: text,
+    body: "",
   });
 
   let metaFileUrl = entryUrl + 'entry.json';
+
+  const meta = {
+    title: 'Untitled',
+    tags: [],
+  };
 
   fetch(metaFileUrl, {
     method: 'PUT',
     headers,
     body: JSON.stringify(meta),
   });
+
+  return entryUrl;
 }
 
 function genNextEntryName(gemData, name) {
@@ -163,49 +392,9 @@ function parseGemData(tsv) {
 }
 
 
-function EntryCreator(inTags) {
-  const dom = el('div');
-  dom.classList.add('entreate-entry-creator');
 
-  const titleInput = ValueInput('Title');
-  dom.appendChild(MarginBox(titleInput.dom));
 
-  let tags = [];
-  const tagEditor = TagEditor(inTags);
-  dom.appendChild(MarginBox(tagEditor.dom));
-  tagEditor.dom.addEventListener('tags-changed', (e) => {
-    tags = e.detail.tags;
-  });
-
-  const textInput = el('textarea');
-  textInput.classList.add('entreate-entry-creator__text-input');
-  dom.appendChild(MarginBox(textInput));
-
-  const submitButton = el('button', {
-    onclick: (e) => {
-      dom.dispatchEvent(new CustomEvent('create-entry', {
-        bubbles: true,
-        detail: {
-          text: textInput.value,
-          meta: {
-            title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
-            tags,
-          }
-        },
-      }));
-    },
-  });
-  submitButton.classList.add('entreate-button', 'entreate-button-confirm');
-  submitButton.innerText = 'Submit';
-  dom.appendChild(submitButton);
-
-  return {
-    dom,
-    updateTags: tagEditor.updateTags,
-  };
-}
-
-function ValueInput(name) {
+function ValueInput(name, init) {
   const dom = el('div');
   dom.classList.add('value-input');
 
@@ -218,6 +407,10 @@ function ValueInput(name) {
   inputEl.setAttribute('type', 'text');
   dom.appendChild(inputEl);
 
+  if (init) {
+    inputEl.value = init;
+  }
+
   function getValue() {
     return inputEl.value;
   }
@@ -228,7 +421,7 @@ function ValueInput(name) {
   };
 }
 
-function TagEditor(inTags) {
+function TagEditor(inTags, selectedTags) {
   const dom = el('div');
   dom.classList.add('tag-editor');
 
@@ -257,9 +450,11 @@ function TagEditor(inTags) {
 
   function wireSelect() {
     select.addEventListener('tag-selected', (e) => {
+      selectTag(e.detail.tagName);
+    });
+  }
 
-    const tagName = e.detail.tagName;
-
+  function selectTag(tagName) {
     if (tagName && !tags.includes(tagName)) {
       const tag = el('div', {
         onclick: (e) => {
@@ -275,7 +470,6 @@ function TagEditor(inTags) {
       tags.push(tagName);
       notifyChanged();
     }
-  });
   }
 
   function updateTags(newTags) {
@@ -283,6 +477,10 @@ function TagEditor(inTags) {
     dom.replaceChild(newSelect, select);
     select = newSelect;
     wireSelect();
+  }
+
+  for (const tag of selectedTags) {
+    selectTag(tag);
   }
 
   return {
