@@ -105,7 +105,7 @@ function Entreate(driveUri, path, token) {
           fetch(metaFileUrl, {
             method: 'PUT',
             headers,
-            body: JSON.stringify(meta),
+            body: JSON.stringify(meta, null, 2),
           });
         });
 
@@ -121,7 +121,7 @@ function Entreate(driveUri, path, token) {
           fetch(tagsUrl, {
             method: 'PUT',
             headers,
-            body: JSON.stringify(tags),
+            body: JSON.stringify(tags, null, 2),
           });
         });
 
@@ -355,7 +355,7 @@ async function initEntry(dom, driveUri, path, headers) {
   fetch(metaFileUrl, {
     method: 'PUT',
     headers,
-    body: JSON.stringify(meta),
+    body: JSON.stringify(meta, null, 2),
   });
 
   return entryUrl;
@@ -404,6 +404,7 @@ function ValueInput(name, init) {
   dom.appendChild(labelEl);
 
   const inputEl = el('input');
+  inputEl.classList.add('value-input__text');
   inputEl.setAttribute('type', 'text');
   dom.appendChild(inputEl);
 
