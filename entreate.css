@@ -17,11 +17,12 @@
   padding: 10px;
   border: var(--border);
 }
-.tag-editor__tag-list {
+
+.tag-list {
   display: flex;
   flex-wrap: wrap;
 }
-.tag-editor__tag {
+.tag-list__tag{
   margin: 5px;
   padding: 2px 5px;
   border-radius: 5px;
@@ -47,8 +48,18 @@
 
 .entry-list-item {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  padding: 5px;
+  border-bottom: 1px solid #000;
 }
 .entry-list-item:hover {
   background-color: var(--highlight-color);
+}
+.entry-list__top-row {
+  display: flex;
+  justify-content: space-between;
+}
+.entry-list__bottom-row {
+  display: flex;
+  justify-content: space-between;
 }

@@ -139,7 +139,7 @@ function EntryList(entriesDirUrl, headers) {
   const dom = el('div');
   dom.classList.add('entry-list');
 
-  const desiredNumPosts = 10;
+  const desiredNumPosts = 100;
 
   fetch(entriesDirUrl + '.gemdrive-ls.tsv', {
     headers,
@@ -163,6 +163,16 @@ function EntryList(entriesDirUrl, headers) {
       return;
     }
 
+    const createEntryButton = el('button', {
+      onclick: () => {
+        dom.dispatchEvent(new CustomEvent('create-entry', {
+          bubbles: true,
+        }));
+      },
+    });
+    createEntryButton.innerText = "Create entry";
+    dom.appendChild(createEntryButton);
+
     const tsv = await response.text();
     const gemData = parseGemData(tsv);
 
@@ -177,60 +187,63 @@ function EntryList(entriesDirUrl, headers) {
       for (const entryDir of monthDirs) {
         numPosts += 1;
         const entryUrl = monthUrl + entryDir.name;
-        const entryEl = EntryListEntry(entryUrl, headers);
+        const entryEl = EntryListItem(entryUrl, headers);
         dom.appendChild(entryEl);
       }
     }
 
-    const createEntryButton = el('button', {
-      onclick: () => {
-        dom.dispatchEvent(new CustomEvent('create-entry', {
-          bubbles: true,
-        }));
-      },
-    });
-    createEntryButton.innerText = "Create entry";
-    dom.appendChild(createEntryButton);
   });
 
 
   return dom;
 }
 
-function EntryListEntry(entryUrl, headers) {
+function EntryListItem(entryUrl, headers) {
   const dom = el('div');
   dom.classList.add('entry-list-item');
 
   const metaUrl = entryUrl + 'entry.json';
 
-  const nameEl = el('div');
-  dom.appendChild(nameEl);
-
-  let meta;
   fetch(metaUrl, { headers }).then(async (response) => {
-    meta = await response.json();
-    nameEl.innerText = meta.title;
-  });
 
-  const editButton = el('button');
-  editButton.innerText = "Edit";
-  dom.appendChild(editButton);
+    const meta = await response.json();
 
-  editButton.addEventListener('click', (e) => {
-    dom.dispatchEvent(new CustomEvent('entry-selected', {
-      bubbles: true,
-      detail: {
-        entryUrl,
-        meta,
-      },
-    }));
+    const topRow = el('div');
+    topRow.classList.add('entry-list__top-row');
+    dom.appendChild(topRow);
+
+    const bottomRow = el('div');
+    bottomRow.classList.add('entry-list__bottom-row');
+    dom.appendChild(bottomRow);
+
+    const nameEl = el('div');
+    topRow.appendChild(nameEl);
+    nameEl.innerText = meta.title + ' (' + meta.date + ')';
+
+    const editButton = el('button');
+    editButton.innerText = "Edit";
+    topRow.appendChild(editButton);
+
+    editButton.addEventListener('click', (e) => {
+      dom.dispatchEvent(new CustomEvent('entry-selected', {
+        bubbles: true,
+        detail: {
+          entryUrl,
+          meta,
+        },
+      }));
+    });
+
+
+    const tagList = TagList(meta.tags);
+    bottomRow.appendChild(tagList);
   });
 
   return dom;
 }
 
 
-function EntryEditor(entryUrl, text, meta, inTags) {
+function EntryEditor(entryUrl, text, meta, allTags) {
   const dom = el('div');
   dom.classList.add('entreate-entry-editor');
 
@@ -267,7 +280,7 @@ function EntryEditor(entryUrl, text, meta, inTags) {
   dom.appendChild(MarginBox(titleInput.dom));
 
   let tags = [];
-  const tagEditor = TagEditor(inTags, meta.tags);
+  const tagEditor = TagEditor(allTags, meta.tags);
   dom.appendChild(MarginBox(tagEditor.dom));
   tagEditor.dom.addEventListener('tags-changed', (e) => {
     tags = e.detail.tags;
@@ -380,6 +393,7 @@ function genNextEntryName(gemData, name) {
   throw new Error("too many iterations");
 }
 
+
 function parseGemData(tsv) {
   return tsv.split('\n')
     .filter(line => line.length > 0)
@@ -390,8 +404,6 @@ function parseGemData(tsv) {
       size: columns[2],
     }));
 }
-
-
 
 
 function ValueInput(name, init) {
@@ -422,7 +434,7 @@ function ValueInput(name, init) {
   };
 }
 
-function TagEditor(inTags, selectedTags) {
+function TagEditor(allTags, initSelectedTags) {
   const dom = el('div');
   dom.classList.add('tag-editor');
 
@@ -430,13 +442,12 @@ function TagEditor(inTags, selectedTags) {
   title.innerText = "Tags:";
   dom.appendChild(title);
 
-  const tagList = el('div');
-  tagList.classList.add('tag-editor__tag-list');
+  let tagList = createTagList(initSelectedTags);
   dom.appendChild(tagList);
 
-  let tags = [];
+  let selectedTags = [];
 
-  let select = TagSelect(inTags);
+  let select = TagSelect(allTags);
   wireSelect();
   dom.appendChild(select);
 
@@ -444,7 +455,7 @@ function TagEditor(inTags, selectedTags) {
     select.dispatchEvent(new CustomEvent('tags-changed', {
       bubbles: true,
       detail: {
-        tags,
+        tags: selectedTags,
       },
     }));
   }
@@ -456,21 +467,26 @@ function TagEditor(inTags, selectedTags) {
   }
 
   function selectTag(tagName) {
-    if (tagName && !tags.includes(tagName)) {
-      const tag = el('div', {
-        onclick: (e) => {
-          tagList.removeChild(tag);
-          tags = tags.filter(t => t !== tagName);
-          notifyChanged();
-        },
-      });
-      tag.classList.add('tag-editor__tag');
-      tag.innerText = tagName;
-      tagList.appendChild(tag);
-
-      tags.push(tagName);
+    if (tagName && !selectedTags.includes(tagName)) {
+      selectedTags.push(tagName);
+      replaceTagList();
       notifyChanged();
     }
+  }
+
+  function createTagList(tags) {
+    const tagList = TagList(tags);
+    tagList.addEventListener('tag-clicked', (e) => {
+      selectedTags = selectedTags.filter(t => t !== e.detail.tag);
+      replaceTagList();
+    });
+    return tagList;
+  }
+
+  function replaceTagList() {
+    const newTagList = createTagList(selectedTags);
+    dom.replaceChild(newTagList, tagList);
+    tagList = newTagList;
   }
 
   function updateTags(newTags) {
@@ -480,7 +496,7 @@ function TagEditor(inTags, selectedTags) {
     wireSelect();
   }
 
-  for (const tag of selectedTags) {
+  for (const tag of initSelectedTags) {
     selectTag(tag);
   }
 
@@ -490,7 +506,7 @@ function TagEditor(inTags, selectedTags) {
   };
 }
 
-function TagSelect(inTags) {
+function TagSelect(allTags) {
   const select = el('select', {
     onchange: (e) => {
 
@@ -500,7 +516,7 @@ function TagSelect(inTags) {
 
       if (tagName === 'create') {
         const newTag = prompt("Enter a tag");
-        if (newTag && !inTags.includes(newTag)) {
+        if (newTag && !allTags.includes(newTag)) {
           select.dispatchEvent(new CustomEvent('create-tag', {
             bubbles: true,
             detail: {
@@ -529,7 +545,7 @@ function TagSelect(inTags) {
   firstOption.value = 'choose';
   firstOption.innerText = "Select a tag";
   select.appendChild(firstOption);
-  for (const tag of inTags) {
+  for (const tag of allTags) {
     const option = el('option');
     option.setAttribute('value', tag);
     option.innerText = tag;
@@ -541,6 +557,32 @@ function TagSelect(inTags) {
   select.appendChild(addTagOption);
 
   return select;
+}
+
+
+function TagList(tags) {
+  const tagList = el('div');
+  tagList.classList.add('tag-list');
+
+  for (const tag of tags) {
+
+    const tagEl = el('div', {
+      onclick: (e) => {
+        tagList.dispatchEvent(new CustomEvent('tag-clicked', {
+          bubbles: true,
+          detail: {
+            tag,
+          }
+        }));
+      },
+    });
+
+    tagEl.classList.add('tag-list__tag');
+    tagEl.innerText = tag;
+    tagList.appendChild(tagEl);
+  }
+
+  return tagList;
 }
 
 function MarginBox(child) {
