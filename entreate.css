@@ -3,14 +3,12 @@
   --highlight-color: #ddd;
 }
 
-.entreate-entry-editor__text-input {
-  padding: 5px;
-  min-width: 100%;
-  max-width: 100%;
-  min-height: 400px;
+.entreate-entry-editor__text {
   border: var(--border);
-  font-family: Courier New, Monospace;
-  font-size: 16px;
+}
+
+.CodeMirror {
+  height: 400px;
 }
 
 .tag-editor {
