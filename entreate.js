@@ -63,8 +63,6 @@ function Entreate(driveUri, path, token) {
 
           const entryUrl = await initEntry(dom, driveUri, path, headers);
 
-          console.log(entryUrl);
-
           navigate('/editor', {
             entryUrl,
             meta: {
@@ -87,7 +85,6 @@ function Entreate(driveUri, path, token) {
 
         entryEditor.dom.addEventListener('save', async (e) => {
 
-          console.log(e.detail);
           const entryUrl = e.detail.entryUrl;
           const text = e.detail.text;
           const meta = e.detail.meta;
@@ -265,10 +262,10 @@ function EntryEditor(entryUrl, text, meta, allTags) {
         detail: {
           entryUrl,
           text: editor.getValue(),
-          meta: {
+          meta: Object.assign(meta, {
             title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
             tags,
-          }
+          }),
         },
       }));
     },
@@ -280,7 +277,7 @@ function EntryEditor(entryUrl, text, meta, allTags) {
   const titleInput = ValueInput('Title', meta.title);
   dom.appendChild(MarginBox(titleInput.dom));
 
-  let tags = [];
+  let tags = meta.tags;
   const tagEditor = TagEditor(allTags, meta.tags);
   dom.appendChild(MarginBox(tagEditor.dom));
   tagEditor.dom.addEventListener('tags-changed', (e) => {
