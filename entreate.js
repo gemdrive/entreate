@@ -508,6 +508,7 @@ function TagEditor(allTags, initSelectedTags) {
     tagList.addEventListener('tag-clicked', (e) => {
       selectedTags = selectedTags.filter(t => t !== e.detail.tag);
       replaceTagList();
+      notifyChanged();
     });
     return tagList;
   }
