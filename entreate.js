@@ -263,7 +263,7 @@ function EntryEditor(entryUrl, text, meta, allTags) {
         bubbles: true,
         detail: {
           entryUrl,
-          text: textInput.value,
+          text: editor.getValue(),
           meta: {
             title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
             tags,
