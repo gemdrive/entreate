@@ -61,12 +61,13 @@ function Entreate(driveUri, path, token) {
 
         entryList.addEventListener('create-entry', async (e) => {
 
-          const entryUrl = await initEntry(dom, driveUri, path, headers);
+          const { entryUrl, timestamp } = await initEntry(dom, driveUri, path, headers);
 
           navigate('/editor', {
             entryUrl,
             meta: {
               tags: [],
+              timestamp,
             },
           });
         });
@@ -329,7 +330,7 @@ function EntryEditor(entryUrl, text, meta, allTags) {
 
 async function initEntry(dom, driveUri, path, headers) {
 
-  const date = new Date().toISOString().split('.')[0];
+  const date = new Date().toISOString().split('.')[0] + 'Z';
   const yearMonth = date.slice(0, 7);
   const day = date.slice(8, 10);
 
@@ -399,7 +400,7 @@ async function initEntry(dom, driveUri, path, headers) {
     body: JSON.stringify(meta, null, 2),
   });
 
-  return entryUrl;
+  return { entryUrl, timestamp: date };
 }
 
 function genNextEntryName(gemData, name) {
