@@ -206,6 +206,8 @@ function EntryListItem(entryUrl, headers) {
 
     const meta = await response.json();
 
+    console.log(meta);
+
     const topRow = el('div');
     topRow.classList.add('entry-list__top-row');
     dom.appendChild(topRow);
@@ -216,7 +218,7 @@ function EntryListItem(entryUrl, headers) {
 
     const nameEl = el('div');
     topRow.appendChild(nameEl);
-    nameEl.innerText = meta.title + ' (' + meta.date + ')';
+    nameEl.innerText = meta.title + ' (' + meta.timestamp + ')';
 
     const editButton = el('button');
     editButton.innerText = "Edit";
