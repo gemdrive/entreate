@@ -61,13 +61,12 @@ function Entreate(driveUri, path, token) {
 
         entryList.addEventListener('create-entry', async (e) => {
 
-          const { entryUrl, timestamp } = await initEntry(dom, driveUri, path, headers);
+          const entryUrl = await initEntry(dom, driveUri, path, headers);
 
           navigate('/editor', {
             entryUrl,
             meta: {
               tags: [],
-              timestamp,
             },
           });
         });
@@ -392,6 +391,7 @@ async function initEntry(dom, driveUri, path, headers) {
   const meta = {
     title: 'Untitled',
     tags: [],
+    timestamp: date,
   };
 
   fetch(metaFileUrl, {
@@ -400,7 +400,7 @@ async function initEntry(dom, driveUri, path, headers) {
     body: JSON.stringify(meta, null, 2),
   });
 
-  return { entryUrl, timestamp: date };
+  return entryUrl;
 }
 
 function genNextEntryName(gemData, name) {
