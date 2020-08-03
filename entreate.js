@@ -184,7 +184,8 @@ function EntryList(entriesDirUrl, headers) {
       const monthResponse = await fetch(monthUrl + '.gemdrive-ls.tsv', { headers });
       const monthDirs = parseGemData(await monthResponse.text());
 
-      for (const entryDir of monthDirs) {
+      for (let j = monthDirs.length - 1; j >= 0; j--) {
+        const entryDir = monthDirs[j];
         numPosts += 1;
         const entryUrl = monthUrl + entryDir.name;
         const entryEl = EntryListItem(entryUrl, headers);
