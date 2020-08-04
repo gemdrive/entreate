@@ -3,6 +3,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Entreate</title>
+    <link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/default.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.56.0/lib/codemirror.min.css">
     <link rel="stylesheet" type="text/css" href="./entreate.css">
 
@@ -28,6 +30,9 @@
     <script src='https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-auth-client@0.8.0/dist/umd.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.56.0/lib/codemirror.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.56.0/mode/markdown/markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/highlight.min.js"></script>
+
     <script type='module'>
 
       import { Entreate } from './entreate.js';
@@ -67,14 +72,21 @@
           history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
         }
 
-        let path = urlParams.get('path');
-        if (!path) {
-          path = prompt(`Enter a path to the entreate directory on ${driveUri}`);
-          urlParams.set('path', path);
+        let src = urlParams.get('src');
+        if (!src) {
+          src = prompt(`Enter a path to the source directory on ${driveUri}`);
+          urlParams.set('src', src);
           history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
         }
 
-        const entreateEl = Entreate(driveUri, path, token);
+        let dst = urlParams.get('dst');
+        if (!dst) {
+          dst = prompt(`Enter a path to the destination directory on ${driveUri}`);
+          urlParams.set('dst', dst);
+          history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
+        }
+
+        const entreateEl = Entreate(driveUri, src, dst, token);
 
         entreateEl.addEventListener('do-auth', (e) => {
           gemdriveAuthClient.authorize({
@@ -82,8 +94,13 @@
             perms: [
               {
                 type: 'dir',
+                perm: 'read',
+                path: src,
+              },
+              {
+                type: 'dir',
                 perm: 'write',
-                path,
+                path: dst,
               },
             ],
             state: driveUri,
