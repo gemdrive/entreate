@@ -3,19 +3,6 @@ import { initDst, publishAllEntries } from './publish.js';
 import { TagEditor, TagList } from './tag_editor.js';
 
 
-// https://stackoverflow.com/a/38641281/943814
-const naturalSorter = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: 'base'
-});
-
-marked.setOptions({
-  highlight: function(code, lang) {
-    const highlighted = hljs.highlightAuto(code);
-    return highlighted.value;
-  },
-});
-
 
 function Entreate(driveUri, path, dst, token) {
   const dom = document.createElement('div');
