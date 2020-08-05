@@ -85,9 +85,12 @@ export async function publishAllEntries(driveUri, src, dst, token) {
 
         <body>
           <div class='main'>
+
+            ${navHtml} 
+
             <div id='portrait-container'>
               <div class='portrait'>
-                <img src="./portrait.jpg" width="100%">
+                <img src="./portrait.jpg.gemdrive-img-512.jpg" width="100%">
               </div>
             </div>
             <div class='text-content semi-transparent'>
