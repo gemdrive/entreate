@@ -78,6 +78,8 @@ export async function publishAllEntries(driveUri, src, dst, token) {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+          <title>Anders' little corner of the internet</title>
+
           ${importsHtml}
           <link rel='stylesheet' href='../theme.css'>
           
@@ -192,6 +194,8 @@ export async function publishAllEntries(driveUri, src, dst, token) {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+          <title>Anders' little corner of the internet</title>
+
           ${importsHtml}
           <link rel='stylesheet' href='../theme.css'>
           
@@ -235,9 +239,9 @@ export async function publishAllEntries(driveUri, src, dst, token) {
       method: 'PUT',
     });
 
-    const entryHtml = marked(text);
+    const contentHtml = marked(text);
 
-    const indexHtml = `
+    const entryHtml = `
       <!doctype html>
       <html>
         <head>
@@ -258,11 +262,11 @@ export async function publishAllEntries(driveUri, src, dst, token) {
 
             <div class='entry'>
               <div class='entry__header'>
-                <h1>${meta.title}</h1>
+                <h1 id='${meta.urlName}'>${meta.title}</h1>
                 <h2>${meta.timestamp}</h2>
               </div>
               <div class='entry__content'>
-                ${entryHtml}
+                ${contentHtml}
               </div>
             </div>
           </div>
@@ -273,10 +277,10 @@ export async function publishAllEntries(driveUri, src, dst, token) {
     const indexHtmlUrl = createDstUrl + 'index.html';
     await fetch(indexHtmlUrl + '?access_token=' + token, {
       method: 'PUT',
-      body: indexHtml,
+      body: entryHtml,
     });
 
-    return { meta, content: entryHtml };
+    return { meta, content: contentHtml };
   }
 
   console.log("done");
