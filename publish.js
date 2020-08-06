@@ -92,7 +92,7 @@ export async function publishAllEntries(driveUri, src, dst, token) {
 
             <div id='portrait-container'>
               <div class='portrait'>
-                <img src="./portrait.jpg.gemdrive-img-512.jpg" width="100%">
+                <img src="../portrait.jpg.gemdrive-img-512.jpg" width="100%">
               </div>
             </div>
             <div class='text-content semi-transparent'>
@@ -141,10 +141,19 @@ export async function publishAllEntries(driveUri, src, dst, token) {
       body: aboutHtml,
     });
 
+    // Main page is just an exact copy of the about page currently. Note that
+    // I'm using a bit of a hack here. The template string above uses ../ to
+    // access a couple resources, but it works for the root page as well
+    // since the browser stops at the top level.
+    await fetch(driveUri + dst + 'index.html?access_token=' + token, {
+      method: 'PUT',
+      body: aboutHtml,
+    });
+
     const portraitBlob = await fetch(driveUri + src + 'portrait.jpg?access_token=' + token)
       .then(r => r.blob());
 
-    await fetch(driveUri + dst + 'about/portrait.jpg?access_token=' + token, {
+    await fetch(driveUri + dst + 'portrait.jpg?access_token=' + token, {
       method: 'PUT',
       body: portraitBlob,
     });
@@ -262,7 +271,7 @@ export async function publishAllEntries(driveUri, src, dst, token) {
 
             <div class='entry'>
               <div class='entry__header'>
-                <h1 id='${meta.urlName}'>${meta.title}</h1>
+                <h1>${meta.title}</h1>
                 <h2>${meta.timestamp}</h2>
               </div>
               <div class='entry__content'>
