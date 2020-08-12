@@ -1,7 +1,6 @@
-import { el, parseGemData, ValueInput, MarginBox } from './utils.js';
+import { el, parseGemData, ValueInput, MarginBox, entryIterator, naturalSorter } from './utils.js';
 import { initDst, publishAllEntries } from './publish.js';
 import { TagEditor, TagList } from './tag_editor.js';
-
 
 
 function Entreate(driveUri, path, dst, token) {
@@ -18,7 +17,7 @@ function Entreate(driveUri, path, dst, token) {
   dom.appendChild(contentEl);
 
 
-  const entriesDirUrl = driveUri + path + 'entries/';
+  const entriesDirUrl = driveUri + path;
 
   let newEntry = false;
 
@@ -52,7 +51,7 @@ function Entreate(driveUri, path, dst, token) {
 
     switch (page) {
       case '/home': {
-        const entryList = EntryList(entriesDirUrl, headers);
+        const entryList = EntryList(entriesDirUrl, headers, token);
         contentEl.replaceChild(entryList, contentEl.firstChild);
 
         entryList.addEventListener('entry-selected', (e) => {
@@ -136,35 +135,12 @@ function Entreate(driveUri, path, dst, token) {
   return dom;
 }
 
-
-function EntryList(entriesDirUrl, headers) {
+function EntryList(entriesDirUrl, headers, token) {
   const dom = el('div');
   dom.classList.add('entry-list');
 
-  const desiredNumPosts = 5;
-
-  fetch(entriesDirUrl + '.gemdrive-ls.tsv', {
-    headers,
-  }).then(async (response) => {
-
-    if (response.status === 404) {
-      await fetch(entriesDirUrl, {
-        method: 'PUT',
-        headers,
-      });
-      return;
-    }
-    else if (response.status === 403) {
-      const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
-
-      if (doAuth) {
-        dom.dispatchEvent(new CustomEvent('do-auth', {
-          bubbles: true,
-        }));
-      }
-      return;
-    }
-
+  (async () => {
+    
     const createEntryButton = el('button', {
       onclick: () => {
         dom.dispatchEvent(new CustomEvent('create-entry', {
@@ -185,43 +161,28 @@ function EntryList(entriesDirUrl, headers) {
     publishAllBtn.innerText = "Publish All";
     dom.appendChild(publishAllBtn);
 
-    const tsv = await response.text();
-    const gemData = parseGemData(tsv);
-
-    let numPosts = 0;
-    for (let i = gemData.length - 1; i >= 0 && numPosts < desiredNumPosts; i--) {
-      const monthDir = gemData[i];
-      const monthUrl = entriesDirUrl + monthDir.name;
-
-      const monthResponse = await fetch(monthUrl + '.gemdrive-ls.tsv', { headers });
-      const monthDirs = parseGemData(await monthResponse.text());
-
-      for (let j = monthDirs.length - 1; j >= 0; j--) {
-        const entryDir = monthDirs[j];
-        numPosts += 1;
-        const entryUrl = monthUrl + entryDir.name;
-        const entryEl = EntryListItem(entryUrl, headers);
-        dom.appendChild(entryEl);
-      }
+    // Iterate entries in reverse-chronological order
+    const compare = (a, b) => naturalSorter.compare(b, a);
+    for await (const entryUrl of entryIterator(entriesDirUrl, token, compare)) {
+      const entryEl = EntryListItem(entryUrl, token);
+      dom.appendChild(entryEl);
     }
 
-  });
+  })();
 
 
   return dom;
 }
 
-function EntryListItem(entryUrl, headers) {
+function EntryListItem(entryUrl, token) {
   const dom = el('div');
   dom.classList.add('entry-list-item');
 
-  const metaUrl = entryUrl + 'entry.json';
+  const metaUrl = entryUrl + 'entry.json?access_token=' + token;
 
-  fetch(metaUrl, { headers }).then(async (response) => {
+  fetch(metaUrl).then(async (response) => {
 
     const meta = await response.json();
-
-    console.log(meta);
 
     const topRow = el('div');
     topRow.classList.add('entry-list__top-row');
@@ -436,6 +397,8 @@ function genNextEntryName(gemData, name) {
 
   throw new Error("too many iterations");
 }
+
+
 
 
 export {

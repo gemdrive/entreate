@@ -1,11 +1,4 @@
-import { parseGemData } from './utils.js';
-
-
-// https://stackoverflow.com/a/38641281/943814
-const naturalSorter = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: 'base'
-});
+import { parseGemData, naturalSorter, entryIterator } from './utils.js';
 
 marked.setOptions({
   highlight: function(code, lang) {
@@ -33,42 +26,40 @@ const navHtml = `
   </nav>
 `;
 
+const entryNavHtml = `
+  <nav class='semi-transparent'>
+    <a class='nav-btn' href='../../../../feed/'>Feed</a>
+    <a class='nav-btn' href='../../../../about/'>About</a>
+  </nav>
+`;
+
 const importsHtml = `
   <link rel="stylesheet"
     href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/tomorrow-night.min.css">
 `;
 
 export async function publishAllEntries(driveUri, src, dst, token) {
+
+  console.log("Begin Publishing");
+
   const entriesDirUrl = driveUri + src + 'entries/';
   const response = await fetch(entriesDirUrl + '.gemdrive-ls.tsv?access_token=' + token);
   const gemTsv = await response.text();
   const gemData = parseGemData(gemTsv);
 
-  let allEntries = [];
-  for (const monthDir of gemData) {
-    const monthUrl = entriesDirUrl + monthDir.name;
-    const entries = await processMonth(monthUrl);
-    allEntries = [...allEntries, ...entries];
-  }
-
-  await publishAboutPage();
-  await publishFeedPage(allEntries);
-
-  async function processMonth(monthUrl) {
-    const monthResponse = await fetch(monthUrl + '.gemdrive-ls.tsv?access_token=' + token);
-    const monthDirs = parseGemData(await monthResponse.text());
-
-    const entries = [];
-
-    for (const entryDir of monthDirs) {
-      const entryUrl = monthUrl + entryDir.name;
+  (async () => {
+    const allEntries = [];
+    for await (const entryUrl of entryIterator(driveUri + src, token)) {
+      console.log("Publishing " + entryUrl);
       const entry = await processEntry(entryUrl);
-      entries.push(entry);
+      allEntries.push(entry);
     }
 
-    return entries;
-  }
+    await publishAboutPage();
+    await publishFeedPage(allEntries);
 
+    console.log("Done Publishing");
+  })();
 
   async function publishAboutPage() {
     const aboutHtml = `
@@ -132,11 +123,11 @@ export async function publishAllEntries(driveUri, src, dst, token) {
       </html>
     `;
 
-    await fetch(driveUri + dst + 'about/?access_token=' + token, {
+    await fetch(driveUri + src + 'about/?access_token=' + token, {
       method: 'PUT',
     });
 
-    await fetch(driveUri + dst + 'about/index.html?access_token=' + token, {
+    await fetch(driveUri + src + 'about/index.html?access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
@@ -145,7 +136,7 @@ export async function publishAllEntries(driveUri, src, dst, token) {
     // I'm using a bit of a hack here. The template string above uses ../ to
     // access a couple resources, but it works for the root page as well
     // since the browser stops at the top level.
-    await fetch(driveUri + dst + 'index.html?access_token=' + token, {
+    await fetch(driveUri + src + 'index.html?access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
@@ -153,7 +144,7 @@ export async function publishAllEntries(driveUri, src, dst, token) {
     const portraitBlob = await fetch(driveUri + src + 'portrait.jpg?access_token=' + token)
       .then(r => r.blob());
 
-    await fetch(driveUri + dst + 'portrait.jpg?access_token=' + token, {
+    await fetch(driveUri + src + 'portrait.jpg?access_token=' + token, {
       method: 'PUT',
       body: portraitBlob,
     });
@@ -172,14 +163,15 @@ export async function publishAllEntries(driveUri, src, dst, token) {
 
       const content = entry.content.length < 1024 ? entry.content : '';
 
+      const entryPath = entry.entryUrl.slice((driveUri + src).length);
+
       const template = `
         <div class='entry-list__entry'>
           <div class='list-entry'>
             <div class='list-entry__controls'>
-              <span class='list-entry__id'>#${entry.meta.id}</span>
               <span>${entry.meta.timestamp}</span>
-              <a href='../${entry.meta.id}/#${entry.meta.urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
-              <a href='../${entry.meta.id}/#${entry.meta.urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
+              <a href='../${entryPath}#${entry.meta.urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
+              <a href='../${entryPath}#${entry.meta.urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
             </div>
             <div class='entry'>
               <div class='entry__header'>
@@ -223,11 +215,11 @@ export async function publishAllEntries(driveUri, src, dst, token) {
       </html>
     `;
 
-    await fetch(driveUri + dst + 'feed/?access_token=' + token, {
+    await fetch(driveUri + src + 'feed/?access_token=' + token, {
       method: 'PUT',
     });
 
-    await fetch(driveUri + dst + 'feed/index.html?access_token=' + token, {
+    await fetch(driveUri + src + 'feed/index.html?access_token=' + token, {
       method: 'PUT',
       body: feedHtml,
     });
@@ -242,12 +234,6 @@ export async function publishAllEntries(driveUri, src, dst, token) {
     const textResponse = await fetch(textUrl + '?access_token=' + token);
     const text = await textResponse.text();
 
-    const createDstUrl = driveUri + dst + meta.id + '/';
-
-    await fetch(createDstUrl + '?access_token=' + token, {
-      method: 'PUT',
-    });
-
     const contentHtml = marked(text);
 
     const entryHtml = `
@@ -260,14 +246,14 @@ export async function publishAllEntries(driveUri, src, dst, token) {
           <title>${meta.title}</title>
 
           ${importsHtml}
-          <link rel='stylesheet' href='../theme.css'>
+          <link rel='stylesheet' href='../../../../theme.css'>
           
         </head>
 
         <body>
           <div class='main'>
 
-            ${navHtml}
+            ${entryNavHtml}
 
             <div class='entry'>
               <div class='entry__header'>
@@ -283,14 +269,12 @@ export async function publishAllEntries(driveUri, src, dst, token) {
       </html>
     `;
 
-    const indexHtmlUrl = createDstUrl + 'index.html';
+    const indexHtmlUrl = entryUrl + 'index.html';
     await fetch(indexHtmlUrl + '?access_token=' + token, {
       method: 'PUT',
       body: entryHtml,
     });
 
-    return { meta, content: contentHtml };
+    return { meta, content: contentHtml, entryUrl };
   }
-
-  console.log("done");
 }
