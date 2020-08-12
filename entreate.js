@@ -1,9 +1,9 @@
 import { el, parseGemData, ValueInput, MarginBox, entryIterator, naturalSorter } from './utils.js';
-import { initDst, publishAllEntries } from './publish.js';
+import { publishAllEntries } from './publish.js';
 import { TagEditor, TagList } from './tag_editor.js';
 
 
-function Entreate(driveUri, path, dst, token) {
+function Entreate(driveUri, path, token) {
   const dom = document.createElement('div');
   dom.classList.add('entreate');
 
@@ -71,8 +71,7 @@ function Entreate(driveUri, path, dst, token) {
         });
 
         entryList.addEventListener('publish-all', async (e) => {
-          initDst(driveUri, path, dst, token);
-          publishAllEntries(driveUri, path, dst, token);
+          publishAllEntries(driveUri, path, token);
         });
         break;
       }

@@ -7,18 +7,6 @@ marked.setOptions({
   },
 });
 
-
-export async function initDst(driveUri, src, dst, token) {
-  const themeUrl = driveUri + src + 'theme.css';
-  const themeRes = await fetch(themeUrl + '?access_token=' + token);
-  const themeCss = await themeRes.text();
-
-  await fetch(driveUri + dst + 'theme.css?access_token=' + token, {
-    method: 'PUT',
-    body: themeCss,
-  });
-}
-
 const navHtml = `
   <nav class='semi-transparent'>
     <a class='nav-btn' href='../feed/'>Feed</a>
@@ -38,14 +26,9 @@ const importsHtml = `
     href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/tomorrow-night.min.css">
 `;
 
-export async function publishAllEntries(driveUri, src, dst, token) {
+export async function publishAllEntries(driveUri, src, token) {
 
   console.log("Begin Publishing");
-
-  const entriesDirUrl = driveUri + src + 'entries/';
-  const response = await fetch(entriesDirUrl + '.gemdrive-ls.tsv?access_token=' + token);
-  const gemTsv = await response.text();
-  const gemData = parseGemData(gemTsv);
 
   (async () => {
     const allEntries = [];

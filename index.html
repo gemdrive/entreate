@@ -79,14 +79,7 @@
           history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
         }
 
-        let dst = urlParams.get('dst');
-        if (!dst) {
-          dst = prompt(`Enter a path to the destination directory on ${driveUri}`);
-          urlParams.set('dst', dst);
-          history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
-        }
-
-        const entreateEl = Entreate(driveUri, src, dst, token);
+        const entreateEl = Entreate(driveUri, src, token);
 
         entreateEl.addEventListener('do-auth', (e) => {
           gemdriveAuthClient.authorize({
@@ -96,11 +89,6 @@
                 type: 'dir',
                 perm: 'write',
                 path: src,
-              },
-              {
-                type: 'dir',
-                perm: 'write',
-                path: dst,
               },
             ],
             state: driveUri,
