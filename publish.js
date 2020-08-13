@@ -148,13 +148,16 @@ export async function publishAllEntries(driveUri, src, token) {
 
       const entryPath = entry.entryUrl.slice((driveUri + src).length);
 
+      const urlName = entry.meta.urlName ? entry.meta.urlName : entry.meta.title
+        .toLowerCase().replace(/ /g, '-').replace("'", '');
+
       const template = `
         <div class='entry-list__entry'>
           <div class='list-entry'>
             <div class='list-entry__controls'>
               <span>${entry.meta.timestamp}</span>
-              <a href='../${entryPath}#${entry.meta.urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
-              <a href='../${entryPath}#${entry.meta.urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
+              <a href='../${entryPath}#${urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
+              <a href='../${entryPath}#${urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
             </div>
             <div class='entry'>
               <div class='entry__header'>
