@@ -305,10 +305,12 @@ function EntryEditor(entryUrl, text, meta, allTags) {
 async function initEntry(dom, driveUri, path, headers) {
 
   const date = new Date().toISOString().split('.')[0] + 'Z';
-  const yearMonth = date.slice(0, 7);
+  const year = date.slice(0, 4);
+  const month = date.slice(5, 7);
   const day = date.slice(8, 10);
 
-  const createDateDirUrl = driveUri + path + `entries/${yearMonth}/`;
+  const dateDirUrl = driveUri + path + `${year}/${month}/${day}/`;
+  const createDateDirUrl = dateDirUrl + '?recursive=true';
   const dateResponse = await fetch(createDateDirUrl, {
     method: 'PUT',
     headers,
@@ -326,36 +328,24 @@ async function initEntry(dom, driveUri, path, headers) {
     return;
   }
 
+  const gemUrl = `${dateDirUrl}.gemdrive-ls.json`;
 
-  const gemUrl = driveUri + path + `entries/${yearMonth}/.gemdrive-ls.tsv`;
+  const gemReponse = await fetch(gemUrl, { headers });
+  const gemData = await gemReponse.json();
 
-  const promises = [
-    fetch(gemUrl, {
-      headers,
-    }),
-  ];
+  const nextEntryName = genNextEntryName(gemData);
 
-  const [ gemReponse ] = await Promise.all(promises);
-  const tsv = await gemReponse.text();
-  const gemData = parseGemData(tsv);
-
-  //const name = date + '-' + meta.title;
-  const name = date;
-  const nextEntryName = genNextEntryName(gemData, name);
-
-  const entryUrl = driveUri + path + `entries/${yearMonth}/${nextEntryName}`;
-
-  let createDirUrl = entryUrl;
+  const entryUrl = `${dateDirUrl}${nextEntryName}`;
 
   // need to await directory creation before proceeding
-  await fetch(createDirUrl, {
+  await fetch(entryUrl, {
     method: 'PUT',
     headers,
   });
 
   let entryFileUrl = entryUrl + 'entry.md';
 
-  fetch(entryFileUrl, {
+  await fetch(entryFileUrl, {
     method: 'PUT',
     headers,
     body: "",
@@ -369,7 +359,7 @@ async function initEntry(dom, driveUri, path, headers) {
     timestamp: date,
   };
 
-  fetch(metaFileUrl, {
+  await fetch(metaFileUrl, {
     method: 'PUT',
     headers,
     body: JSON.stringify(meta, null, 2),
@@ -378,26 +368,17 @@ async function initEntry(dom, driveUri, path, headers) {
   return entryUrl;
 }
 
-function genNextEntryName(gemData, name) {
+function genNextEntryName(gemData) {
 
-  if (gemData.length === 0 || gemData.filter(e => e.name === name + '/').length === 0) {
-    return name.replace(/ /gi, '_') + '/';
-  }
-
-  let genName;
-  for (let i = 2; i < 1000; i++) {
-    const newName = (name + '_' + i + '/').replace(/ /gi, '_');
-    // TODO: not efficient
-    const filtered = gemData.filter(e => e.name === newName);
-    if (filtered.length === 0) {
-      return newName;
+  for (let i = 1; i < 5000; i++) {
+    const name = i.toString() + '/';
+    if (!gemData.children[name]) {
+      return name;
     }
   }
 
   throw new Error("too many iterations");
 }
-
-
 
 
 export {
