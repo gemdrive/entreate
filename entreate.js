@@ -1,4 +1,7 @@
-import { el, parseGemData, ValueInput, MarginBox, entryIterator, naturalSorter } from './utils.js';
+import {
+  el, parseGemData, ValueInput, MarginBox, entryIterator, naturalSorter,
+  idToPath,
+} from './utils.js';
 import { publishAllEntries } from './publish.js';
 import { TagEditor, TagList } from './tag_editor.js';
 
@@ -60,14 +63,19 @@ function Entreate(driveUri, path, token) {
 
         entryList.addEventListener('create-entry', async (e) => {
 
-          const entryUrl = await initEntry(dom, driveUri, path, headers);
+          const entryUrl = await initEntry(dom, driveUri, path, token);
 
-          navigate('/editor', {
-            entryUrl,
-            meta: {
-              tags: [],
-            },
-          });
+          if (entryUrl) {
+            navigate('/editor', {
+              entryUrl,
+              meta: {
+                tags: [],
+              },
+            });
+          }
+          else {
+            alert("Failed to create entry. The id might already exist");
+          }
         });
 
         entryList.addEventListener('publish-all', async (e) => {
@@ -302,21 +310,26 @@ function EntryEditor(entryUrl, text, meta, allTags) {
 }
 
 
-async function initEntry(dom, driveUri, path, headers) {
+async function initEntry(dom, driveUri, path, token) {
 
-  const date = new Date().toISOString().split('.')[0] + 'Z';
-  const year = date.slice(0, 4);
-  const month = date.slice(5, 7);
-  const day = date.slice(8, 10);
+  const dbUrl = `${driveUri + path}db.json?access_token=${token}`;
 
-  const dateDirUrl = driveUri + path + `${year}/${month}/${day}/`;
-  const createDateDirUrl = dateDirUrl + '?recursive=true';
-  const dateResponse = await fetch(createDateDirUrl, {
+  const db = await fetch(dbUrl)
+    .then(r => r.json());
+
+  const entryId = db.lastId + 1;
+  const entryDirUrl = driveUri + path + idToPath(entryId);
+  console.log(entryDirUrl);
+
+  const createDateDirUrl = entryDirUrl + '?recursive=true&access_token=' + token;
+  const createResponse = await fetch(createDateDirUrl, {
     method: 'PUT',
-    headers,
   });
 
-  if (dateResponse.status === 403) {
+  if (createResponse.status === 400) {
+    return null;
+  }
+  else if (createResponse.status === 403) {
     const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
 
     if (doAuth) {
@@ -328,44 +341,40 @@ async function initEntry(dom, driveUri, path, headers) {
     return;
   }
 
-  const gemUrl = `${dateDirUrl}.gemdrive-ls.json`;
-
-  const gemReponse = await fetch(gemUrl, { headers });
-  const gemData = await gemReponse.json();
-
-  const nextEntryName = genNextEntryName(gemData);
-
-  const entryUrl = `${dateDirUrl}${nextEntryName}`;
-
-  // need to await directory creation before proceeding
-  await fetch(entryUrl, {
+  db.lastId = entryId;
+  const dbPutRes = await fetch(dbUrl, {
     method: 'PUT',
-    headers,
+    body: JSON.stringify(db, null, 2),
   });
 
-  let entryFileUrl = entryUrl + 'entry.md';
+  if (dbPutRes.status !== 200) {
+    throw new Error("db PUT failed. Not good");
+  }
 
-  await fetch(entryFileUrl, {
+  
+  let entryFileUrl = entryDirUrl + 'entry.md';
+
+  await fetch(entryFileUrl + '?access_token=' + token, {
     method: 'PUT',
-    headers,
     body: "",
   });
 
-  let metaFileUrl = entryUrl + 'entry.json';
+  let metaFileUrl = entryDirUrl + 'entry.json';
+
+  const timestamp = new Date().toISOString().split('.')[0] + 'Z';
 
   const meta = {
     title: 'Untitled',
     tags: [],
-    timestamp: date,
+    timestamp,
   };
 
-  await fetch(metaFileUrl, {
+  await fetch(metaFileUrl + '?access_token=' + token, {
     method: 'PUT',
-    headers,
     body: JSON.stringify(meta, null, 2),
   });
 
-  return entryUrl;
+  return entryDirUrl;
 }
 
 function genNextEntryName(gemData) {

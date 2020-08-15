@@ -74,59 +74,27 @@ export function MarginBox(child) {
 
 export async function* entryIterator(entriesDirUrl, token, comparator) {
 
-  const yearRes = await fetch(`${entriesDirUrl}.gemdrive-ls.json?access_token=${token}`);
-  const yearsGemData = await yearRes.json();
-  const years = Object.keys(yearsGemData.children).filter(n => n.endsWith('/'));
-  const yearsSorted = comparator ? years.slice().sort(comparator) : years;
+  const db = await fetch(`${entriesDirUrl}db.json?access_token=${token}`)
+    .then(r => r.json());
 
-  for (const year of yearsSorted) {
-    const yearUrl = entriesDirUrl + year;
-
-    for await (const entry of yearIterator(yearUrl, token, comparator)) {
-      yield entry;
-    }
+  for (let id = db.lastId; id >= 1; id -= 1) {
+    const entryPath = idToPath(id);
+    yield `${entriesDirUrl}${entryPath}`;
   }
 }
 
-async function* yearIterator(yearDirUrl, token, comparator) {
-  const monthRes = await fetch(`${yearDirUrl}.gemdrive-ls.json?access_token=${token}`);
-  const monthsGemData = await monthRes.json();
-  const months = Object.keys(monthsGemData.children).filter(m => m.endsWith('/'));
-  const monthsSorted = comparator ? months.slice().sort(comparator) : months;
+export function idToPath(id) {
+  const idStr = id.toString().split('').reverse().join('');
 
-  for (const month of monthsSorted) {
-    const monthUrl = yearDirUrl + month;
+  let path = '';
+  for (let i = 0; i < idStr.length; i++) {
 
-    for await (const entry of monthIterator(monthUrl, token, comparator)) {
-      yield entry;
+    if (i % 3 === 0) {
+      path = '/' + path;
     }
+
+    path = idStr[i] + path;
   }
-}
 
-async function* monthIterator(monthDirUrl, token, comparator) {
-  const dayRes = await fetch(`${monthDirUrl}.gemdrive-ls.json?access_token=${token}`);
-  const daysGemData = await dayRes.json();
-  const days = Object.keys(daysGemData.children).filter(m => m.endsWith('/'));
-  const daysSorted = comparator ? days.slice().sort(comparator) : days;
-
-  for (const day of daysSorted) {
-    const dayUrl = monthDirUrl + day;
-
-    for await (const entry of dayIterator(dayUrl, token, comparator)) {
-      yield entry;
-    }
-  }
-}
-
-async function* dayIterator(dayDirUrl, token, comparator) {
-  const entryRes = await fetch(`${dayDirUrl}.gemdrive-ls.json?access_token=${token}`);
-  const entriesGemData = await entryRes.json();
-  const entries = Object.keys(entriesGemData.children).filter(m => m.endsWith('/'));
-  const entriesSorted = comparator ? entries.slice().sort(comparator) : entries;
-
-  for (const entry of entriesSorted) {
-    const entryUrl = dayDirUrl + entry;
-
-    yield entryUrl;
-  }
+  return path;
 }
