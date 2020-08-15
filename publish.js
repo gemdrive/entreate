@@ -31,15 +31,8 @@ export async function publishAllEntries(driveUri, src, token) {
   console.log("Begin Publishing");
 
   (async () => {
-    const allEntries = [];
-    for await (const entryUrl of entryIterator(driveUri + src, token)) {
-      console.log("Publishing " + entryUrl);
-      const entry = await processEntry(entryUrl);
-      allEntries.push(entry);
-    }
-
     await publishAboutPage();
-    await publishFeedPage(allEntries);
+    await publishFeedPage(driveUri, src, token);
 
     console.log("Done Publishing");
   })();
@@ -133,134 +126,147 @@ export async function publishAllEntries(driveUri, src, token) {
     });
   }
 
-  async function publishFeedPage(allEntries) {
+  
+}
 
-    // sort in reverse-chronological order (the key is the entry id, which
-    // increases monotonically).
-    const sortedEntries = allEntries.slice()
-      .sort((a, b) => naturalSorter.compare(a.meta.id, b.meta.id))
-      .reverse();
+export async function publishEntry(entryUrl, token) {
 
-    let entryListHtml = '';
-    for (const entry of sortedEntries) {
+  console.log("Publishing " + entryUrl);
 
-      const content = entry.content.length < 1024 ? entry.content : '';
+  const metaUrl = entryUrl + 'entry.json';
+  const metaResponse = await fetch(metaUrl + '?access_token=' + token);
+  const meta = await metaResponse.json();
 
-      const entryPath = entry.entryUrl.slice((driveUri + src).length);
+  const textUrl = entryUrl + 'entry.md';
+  const textResponse = await fetch(textUrl + '?access_token=' + token);
+  const text = await textResponse.text();
 
-      const urlName = entry.meta.urlName ? entry.meta.urlName : entry.meta.title
-        .toLowerCase().replace(/ /g, '-').replace("'", '');
+  const contentHtml = marked(text);
 
-      const template = `
-        <div class='entry-list__entry'>
-          <div class='list-entry'>
-            <div class='list-entry__controls'>
-              <span>${entry.meta.timestamp}</span>
-              <a href='../${entryPath}#${urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
-              <a href='../${entryPath}#${urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
+  const entryHtml = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>${meta.title}</title>
+
+        ${importsHtml}
+        <link rel='stylesheet' href='../../../../theme.css'>
+        
+      </head>
+
+      <body>
+        <div class='main'>
+
+          ${entryNavHtml}
+
+          <div class='entry'>
+            <div class='entry__header'>
+              <h1>${meta.title}</h1>
+              <h2>${meta.timestamp}</h2>
             </div>
-            <div class='entry'>
-              <div class='entry__header'>
-                <h1>${entry.meta.title}</h1>
-              </div>
-              <div class='entry__content'>
-                ${content}
-              </div>
+            <div class='entry__content'>
+              ${contentHtml}
             </div>
           </div>
         </div>
-      `;
+      </body>
+    </html>
+  `;
 
-      entryListHtml += template;
-    }
+  const indexHtmlUrl = entryUrl + 'index.html';
+  await fetch(indexHtmlUrl + '?access_token=' + token, {
+    method: 'PUT',
+    body: entryHtml,
+  });
 
-    const feedHtml = `
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
+  return { meta, content: contentHtml, entryUrl };
+}
 
-          <title>Anders' little corner of the internet</title>
+export async function publishFeedPage(driveUri, src, token) {
 
-          ${importsHtml}
-          <link rel='stylesheet' href='../theme.css'>
-          
-        </head>
 
-        <body>
-          <div class='main'>
-            ${navHtml} 
-
-            <div class='entry-list'>
-              ${entryListHtml}
-            </div>
-
-          </div>
-        </body>
-      </html>
-    `;
-
-    await fetch(driveUri + src + 'feed/?access_token=' + token, {
-      method: 'PUT',
-    });
-
-    await fetch(driveUri + src + 'feed/index.html?access_token=' + token, {
-      method: 'PUT',
-      body: feedHtml,
-    });
+  const allEntries = [];
+  for await (const entryUrl of entryIterator(driveUri + src, token)) {
+    const entry = await publishEntry(entryUrl, token);
+    allEntries.push(entry);
   }
 
-  async function processEntry(entryUrl) {
-    const metaUrl = entryUrl + 'entry.json';
-    const metaResponse = await fetch(metaUrl + '?access_token=' + token);
-    const meta = await metaResponse.json();
 
-    const textUrl = entryUrl + 'entry.md';
-    const textResponse = await fetch(textUrl + '?access_token=' + token);
-    const text = await textResponse.text();
+  // sort in reverse-chronological order (the key is the entry id, which
+  // increases monotonically).
+  const sortedEntries = allEntries.slice()
+    .sort((a, b) => naturalSorter.compare(a.meta.id, b.meta.id))
+    .reverse();
 
-    const contentHtml = marked(text);
+  let entryListHtml = '';
+  for (const entry of sortedEntries) {
 
-    const entryHtml = `
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
+    const content = entry.content.length < 1024 ? entry.content : '';
 
-          <title>${meta.title}</title>
+    const entryPath = entry.entryUrl.slice((driveUri + src).length);
 
-          ${importsHtml}
-          <link rel='stylesheet' href='../../../../theme.css'>
-          
-        </head>
+    const urlName = entry.meta.urlName ? entry.meta.urlName : entry.meta.title
+      .toLowerCase().replace(/ /g, '-').replace("'", '');
 
-        <body>
-          <div class='main'>
-
-            ${entryNavHtml}
-
-            <div class='entry'>
-              <div class='entry__header'>
-                <h1>${meta.title}</h1>
-                <h2>${meta.timestamp}</h2>
-              </div>
-              <div class='entry__content'>
-                ${contentHtml}
-              </div>
+    const template = `
+      <div class='entry-list__entry'>
+        <div class='list-entry'>
+          <div class='list-entry__controls'>
+            <span>${entry.meta.timestamp}</span>
+            <a href='../${entryPath}#${urlName}' target='_blank' id='open-in-tab-btn' class='list-entry__control-btn'>Open in Tab</a>
+            <a href='../${entryPath}#${urlName}' id='fullscreen-btn' class='list-entry__control-btn'>Fullscreen</a>
+          </div>
+          <div class='entry'>
+            <div class='entry__header'>
+              <h1>${entry.meta.title}</h1>
+            </div>
+            <div class='entry__content'>
+              ${content}
             </div>
           </div>
-        </body>
-      </html>
+        </div>
+      </div>
     `;
 
-    const indexHtmlUrl = entryUrl + 'index.html';
-    await fetch(indexHtmlUrl + '?access_token=' + token, {
-      method: 'PUT',
-      body: entryHtml,
-    });
-
-    return { meta, content: contentHtml, entryUrl };
+    entryListHtml += template;
   }
+
+  const feedHtml = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>Anders' little corner of the internet</title>
+
+        ${importsHtml}
+        <link rel='stylesheet' href='../theme.css'>
+        
+      </head>
+
+      <body>
+        <div class='main'>
+          ${navHtml} 
+
+          <div class='entry-list'>
+            ${entryListHtml}
+          </div>
+
+        </div>
+      </body>
+    </html>
+  `;
+
+  await fetch(driveUri + src + 'feed/?access_token=' + token, {
+    method: 'PUT',
+  });
+
+  await fetch(driveUri + src + 'feed/index.html?access_token=' + token, {
+    method: 'PUT',
+    body: feedHtml,
+  });
 }
