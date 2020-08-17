@@ -142,7 +142,7 @@ function Entreate(driveUri, path, token) {
   return dom;
 }
 
-function EntryList(entriesDirUrl, headers, token) {
+function EntryList(entriesDirUrl, token) {
   const dom = el('div');
   dom.classList.add('entry-list');
 
@@ -186,6 +186,8 @@ function EntryListItem(entryUrl, token) {
   dom.classList.add('entry-list-item');
 
   const metaUrl = entryUrl + 'entry.json?access_token=' + token;
+  const entryUrlParts = entryUrl.split('/')
+  const entryId = entryUrlParts[entryUrlParts.length - 2];
 
   fetch(metaUrl).then(async (response) => {
 
@@ -201,7 +203,7 @@ function EntryListItem(entryUrl, token) {
 
     const nameEl = el('div');
     topRow.appendChild(nameEl);
-    nameEl.innerText = meta.title + ' (' + meta.timestamp + ')';
+    nameEl.innerText = '[' +entryId + '] ' + meta.title + ' (' + meta.timestamp + ')';
 
     const editButton = el('button');
     editButton.innerText = "Edit";
