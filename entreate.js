@@ -26,18 +26,23 @@ function Entreate(driveUri, path, token) {
 
   async function navigate(page, data) {
 
-    const tagsUrl = driveUri + path + 'tags.json';
-    const response = await fetch(tagsUrl + '?access_token=' + token);
+    const dbUrl = driveUri + path + 'db.json?access_token=' + token;
+    const response = await fetch(dbUrl);
 
-    let tags;
+    let db;
     if (response.status === 404) {
-      await fetch(tagsUrl, {
+
+      db = {
+        lastId: 1,
+        tags: [],
+      };
+
+      await fetch(dbUrl, {
         method: 'PUT',
         headers,
-        body: '[]',
+        body: JSON.stringify(db, null, 2),
       });
 
-      tags = [];
     }
     else if (response.status === 403) {
       const doAuth = confirm("Unauthorized. Do you want to attempt authorization?");
@@ -49,7 +54,7 @@ function Entreate(driveUri, path, token) {
       }
     }
     else {
-      tags = await response.json();
+      db = await response.json();
     }
 
     switch (page) {
@@ -91,7 +96,7 @@ function Entreate(driveUri, path, token) {
           text = await textResponse.text();
         }
 
-        const entryEditor = EntryEditor(data.entryUrl, text, data.meta, tags);
+        const entryEditor = EntryEditor(data.entryUrl, text, data.meta, db.tags);
         contentEl.replaceChild(entryEditor.dom, contentEl.firstChild);
 
         entryEditor.dom.addEventListener('save', async (e) => {
@@ -122,14 +127,14 @@ function Entreate(driveUri, path, token) {
         });
 
         entryEditor.dom.addEventListener('create-tag', (e) => {
-          tags.push(e.detail.tag);
+          db.tags.push(e.detail.tag);
 
-          entryEditor.updateTags(tags);
+          entryEditor.updateTags(db.tags);
 
-          fetch(tagsUrl, {
+          fetch(dbUrl, {
             method: 'PUT',
             headers,
-            body: JSON.stringify(tags, null, 2),
+            body: JSON.stringify(db, null, 2),
           });
         });
 
