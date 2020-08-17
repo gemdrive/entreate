@@ -135,6 +135,11 @@ export async function publishEntry(entryUrl, token) {
 
   const metaUrl = entryUrl + 'entry.json';
   const metaResponse = await fetch(metaUrl + '?access_token=' + token);
+
+  if (metaResponse.status !== 200) {
+    return null;
+  }
+
   const meta = await metaResponse.json();
 
   const textUrl = entryUrl + 'entry.md';
@@ -194,11 +199,13 @@ export async function publishFeedPage(driveUri, src, token) {
   for await (const entryUrl of entryIterator(driveUri + src, token)) {
     const entry = await publishEntry(entryUrl, token);
 
-    for (const tag of entry.meta.tags) {
-      allTagsSet.add(tag);
-    }
+    if (entry) {
+      for (const tag of entry.meta.tags) {
+        allTagsSet.add(tag);
+      }
 
-    allEntries.push(entry);
+      allEntries.push(entry);
+    }
   }
 
   const allTags = Array.from(allTagsSet);

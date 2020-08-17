@@ -73,6 +73,8 @@ function Entreate(driveUri, path, token) {
             await fetch(e.detail.entryUrl + '?access_token=' + token, {
               method: 'DELETE',
             });
+
+            navigate('/home');
           }
         });
 
