@@ -1,4 +1,6 @@
-import { parseGemData, naturalSorter, entryIterator } from './utils.js';
+import {
+  parseGemData, naturalSorter, entryIterator, entryPathToId
+} from './utils.js';
 
 marked.setOptions({
   highlight: function(code, lang) {
@@ -205,8 +207,8 @@ export async function publishFeedPage(driveUri, src, token) {
           allTags[tag] = [];
         }
 
-        const entryUrlParts = entryUrl.split('/')
-        const entryId = parseInt(entryUrlParts[entryUrlParts.length - 2]);
+        const entryPath = entryUrl.slice((driveUri + src).length);
+        const entryId = entryPathToId(entryPath);
 
         allTags[tag].push(entryId);
       }

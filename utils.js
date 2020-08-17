@@ -98,3 +98,7 @@ export function idToPath(id) {
 
   return path;
 }
+
+export function entryPathToId(path) {
+  return parseInt(path.replace('/', ''));
+}
