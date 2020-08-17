@@ -27,7 +27,7 @@ function Entreate(driveUri, path, token) {
   async function navigate(page, data) {
 
     const tagsUrl = driveUri + path + 'tags.json';
-    const response = await fetch(tagsUrl, { headers });
+    const response = await fetch(tagsUrl + '?access_token=' + token);
 
     let tags;
     if (response.status === 404) {
@@ -86,7 +86,7 @@ function Entreate(driveUri, path, token) {
       case '/editor':
 
         let text = "";
-        const textResponse = await fetch(data.entryUrl + 'entry.md', { headers });
+        const textResponse = await fetch(data.entryUrl + 'entry.md?access_token=' + token);
         if (textResponse.status === 200) {
           text = await textResponse.text();
         }
