@@ -84,7 +84,7 @@ function TagSelect(allTags) {
 
       if (tagName === 'create') {
         const newTag = prompt("Enter a tag");
-        if (newTag && !allTags.includes(newTag)) {
+        if (newTag && !allTags[newTag]) {
           select.dispatchEvent(new CustomEvent('create-tag', {
             bubbles: true,
             detail: {
@@ -113,7 +113,7 @@ function TagSelect(allTags) {
   firstOption.value = 'choose';
   firstOption.innerText = "Select a tag";
   select.appendChild(firstOption);
-  for (const tag of allTags) {
+  for (const tag of Object.keys(allTags).sort()) {
     const option = el('option');
     option.setAttribute('value', tag);
     option.innerText = tag;

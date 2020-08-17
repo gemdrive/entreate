@@ -139,7 +139,10 @@ function Entreate(driveUri, path, token) {
         });
 
         entryEditor.dom.addEventListener('create-tag', (e) => {
-          db.tags.push(e.detail.tag);
+
+          if (!db.tags[e.detail.tag]) {
+            db.tags[e.detail.tag] = {};
+          }
 
           entryEditor.updateTags(db.tags);
 
