@@ -188,12 +188,31 @@ export async function publishEntry(entryUrl, token) {
 export async function publishFeedPage(driveUri, src, token) {
 
 
+  const allTagsSet = new Set();
+
   const allEntries = [];
   for await (const entryUrl of entryIterator(driveUri + src, token)) {
     const entry = await publishEntry(entryUrl, token);
+
+    for (const tag of entry.meta.tags) {
+      allTagsSet.add(tag);
+    }
+
     allEntries.push(entry);
   }
 
+  const allTags = Array.from(allTagsSet);
+
+  const dbUrl = `${driveUri + src}db.json?access_token=${token}`;
+  const db = await fetch(dbUrl)
+    .then(r => r.json());
+
+  db.tags = allTags.slice().sort();
+
+  await fetch(dbUrl, {
+    method: 'PUT',
+    body: JSON.stringify(db, null, 2),
+  });
 
   // sort in reverse-chronological order (the key is the entry id, which
   // increases monotonically).
