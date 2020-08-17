@@ -59,11 +59,21 @@ function Entreate(driveUri, path, token) {
 
     switch (page) {
       case '/home': {
-        const entryList = EntryList(entriesDirUrl, headers, token);
+        const entryList = EntryList(entriesDirUrl, token);
         contentEl.replaceChild(entryList, contentEl.firstChild);
 
         entryList.addEventListener('entry-selected', (e) => {
           navigate('/editor', e.detail);
+        });
+
+        entryList.addEventListener('entry-delete', async (e) => {
+          const doIt = confirm("Delete entry? " + e.detail.entryUrl);
+
+          if (doIt) {
+            await fetch(e.detail.entryUrl + '?access_token=' + token, {
+              method: 'DELETE',
+            });
+          }
         });
 
         entryList.addEventListener('create-entry', async (e) => {
@@ -177,7 +187,9 @@ function EntryList(entriesDirUrl, token) {
     const compare = (a, b) => naturalSorter.compare(b, a);
     for await (const entryUrl of entryIterator(entriesDirUrl, token, compare)) {
       const entryEl = EntryListItem(entryUrl, token);
-      dom.appendChild(entryEl);
+      if (entryEl) {
+        dom.appendChild(entryEl);
+      }
     }
 
   })();
@@ -188,13 +200,18 @@ function EntryList(entriesDirUrl, token) {
 
 function EntryListItem(entryUrl, token) {
   const dom = el('div');
-  dom.classList.add('entry-list-item');
 
   const metaUrl = entryUrl + 'entry.json?access_token=' + token;
   const entryUrlParts = entryUrl.split('/')
   const entryId = entryUrlParts[entryUrlParts.length - 2];
 
   fetch(metaUrl).then(async (response) => {
+
+    if (response.status !== 200) {
+      return;
+    }
+
+    dom.classList.add('entry-list-item');
 
     const meta = await response.json();
 
@@ -210,9 +227,12 @@ function EntryListItem(entryUrl, token) {
     topRow.appendChild(nameEl);
     nameEl.innerText = '[' +entryId + '] ' + meta.title + ' (' + meta.timestamp + ')';
 
+    const btnContainer = el('div');
+    topRow.appendChild(btnContainer);
+
     const editButton = el('button');
     editButton.innerText = "Edit";
-    topRow.appendChild(editButton);
+    btnContainer.appendChild(editButton);
 
     editButton.addEventListener('click', (e) => {
       dom.dispatchEvent(new CustomEvent('entry-selected', {
@@ -223,6 +243,19 @@ function EntryListItem(entryUrl, token) {
         },
       }));
     });
+
+    const deleteButton = el('button', {
+      onclick: () => {
+        dom.dispatchEvent(new CustomEvent('entry-delete', {
+          bubbles: true,
+          detail: {
+            entryUrl,
+          },
+        }));
+      },
+    });
+    deleteButton.innerText = "Delete";
+    btnContainer.appendChild(deleteButton);
 
 
     const tagList = TagList(meta.tags);
