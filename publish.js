@@ -28,6 +28,11 @@ const importsHtml = `
     href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/tomorrow-night.min.css">
 `;
 
+const analyticsHtml = `
+  <script data-goatcounter="https://anderspitman_net.goatcounter.com/count"
+    async src="//gc.zgo.at/count.js"></script>
+`;
+
 export async function publishAllEntries(driveUri, src, token) {
 
   console.log("Begin Publishing");
@@ -97,6 +102,8 @@ export async function publishAllEntries(driveUri, src, token) {
             <!-- creates space so background visualization continues past content -->
             <div class='spacer'></div>
           </div>
+
+          ${analyticsHtml}
         </body>
       </html>
     `;
@@ -212,6 +219,8 @@ export async function publishEntry(entryUrl, token) {
           
           <!--End mc_embed_signup-->
         </div>
+
+        ${analyticsHtml}
       </body>
     </html>
   `;
@@ -323,6 +332,9 @@ export async function publishFeedPage(driveUri, src, token) {
           </div>
 
         </div>
+
+        ${analyticsHtml}
+
       </body>
     </html>
   `;
