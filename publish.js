@@ -249,17 +249,15 @@ export async function publishEntry(entryUrl, token, inlineCss) {
     body: entryHtml,
   });
 
-  let aclText = 'email\tanders@apitman.com\town\n';
+  if (meta.visibility !== 'public') {
+    const aclText = 'email\tanders@apitman.com\town\n';
 
-  if (meta.visibility === 'public') {
-    aclText += 'builtin\tpublic\tread\n';
+    const aclUrl = entryUrl + '.gemdrive-acl.tsv';
+    await fetch(aclUrl + '?access_token=' + token, {
+      method: 'PUT',
+      body: aclText,
+    });
   }
-
-  const aclUrl = entryUrl + '.gemdrive-acl.tsv';
-  await fetch(aclUrl + '?access_token=' + token, {
-    method: 'PUT',
-    body: aclText,
-  });
 
   return { meta, content: contentHtml, entryUrl };
 }
