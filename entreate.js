@@ -1,7 +1,4 @@
-import {
-  el, parseGemData, ValueInput, MarginBox, entryIterator, naturalSorter,
-  idToPath,
-} from './utils.js';
+import { el, entryIterator, naturalSorter, idToPath } from './utils.js';
 import { publishAllEntries } from './publish.js';
 import { EntryEditor } from './entry_editor.js';
 import { TagList } from './tag_editor.js';
