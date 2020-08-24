@@ -38,13 +38,23 @@ export async function publishAllEntries(driveUri, src, token) {
   console.log("Begin Publishing");
 
   (async () => {
-    await publishAboutPage();
-    await publishFeedPage(driveUri, src, token);
+
+
+    const themeCssUrl = driveUri + src + 'theme.css?access_token=' + token;
+    const themeCss = await fetch(themeCssUrl).then(r => r.text());
+
+    const hlCssUrl = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/tomorrow-night.min.css';
+    const hlCss = await fetch(hlCssUrl).then(r => r.text());
+
+    const inlineCss = themeCss + hlCss;
+
+    await publishAboutPage(inlineCss);
+    await publishFeedPage(driveUri, src, token, inlineCss);
 
     console.log("Done Publishing");
   })();
 
-  async function publishAboutPage() {
+  async function publishAboutPage(inlineCss) {
     const aboutHtml = `
       <!doctype html>
       <html>
@@ -54,8 +64,9 @@ export async function publishAllEntries(driveUri, src, token) {
 
           <title>Anders' little corner of the internet</title>
 
-          ${importsHtml}
-          <link rel='stylesheet' href='../theme.css'>
+          <style>
+            ${inlineCss}
+          </style>
           
         </head>
 
@@ -138,7 +149,7 @@ export async function publishAllEntries(driveUri, src, token) {
   
 }
 
-export async function publishEntry(entryUrl, token) {
+export async function publishEntry(entryUrl, token, inlineCss) {
 
   console.log("Publishing " + entryUrl);
 
@@ -166,8 +177,9 @@ export async function publishEntry(entryUrl, token) {
 
         <title>${meta.title}</title>
 
-        ${importsHtml}
-        <link rel='stylesheet' href='../../../../theme.css'>
+        <style>
+          ${inlineCss}
+        </style>
         
       </head>
 
@@ -234,14 +246,14 @@ export async function publishEntry(entryUrl, token) {
   return { meta, content: contentHtml, entryUrl };
 }
 
-export async function publishFeedPage(driveUri, src, token) {
+export async function publishFeedPage(driveUri, src, token, inlineCss) {
 
 
   const allTags = {};
 
   const allEntries = [];
   for await (const entryUrl of entryIterator(driveUri + src, token)) {
-    const entry = await publishEntry(entryUrl, token);
+    const entry = await publishEntry(entryUrl, token, inlineCss);
 
     if (entry) {
       for (const tag of entry.meta.tags) {
@@ -318,8 +330,9 @@ export async function publishFeedPage(driveUri, src, token) {
 
         <title>Anders' little corner of the internet</title>
 
-        ${importsHtml}
-        <link rel='stylesheet' href='../theme.css'>
+        <style>
+          ${inlineCss}
+        </style>
         
       </head>
 
