@@ -61,3 +61,12 @@
   display: flex;
   justify-content: space-between;
 }
+
+.option-input {
+  display: flex;
+  padding: 10px;
+  border: var(--border);
+}
+.option-input__label {
+  margin: 5px;
+}

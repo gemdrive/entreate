@@ -1,4 +1,4 @@
-import { el, ValueInput, MarginBox } from './utils.js';
+import { el, ValueInput, MarginBox, OptionInput } from './utils.js';
 import { TagEditor } from './tag_editor.js';
 
 
@@ -16,6 +16,8 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
   homeButton.innerText = 'Home';
   dom.appendChild(homeButton);
 
+  let visibility = meta.visibility ? meta.visibility : 'private';
+
   const saveButton = el('button', {
     onclick: (e) => {
       dom.dispatchEvent(new CustomEvent('save', {
@@ -26,6 +28,7 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
           meta: Object.assign(meta, {
             title: titleInput.getValue() ? titleInput.getValue() : 'Untitled',
             tags,
+            visibility,
           }),
         },
       }));
@@ -37,6 +40,13 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
 
   const titleInput = ValueInput('Title', meta.title);
   dom.appendChild(MarginBox(titleInput.dom));
+
+  const visibilityOptionInput = OptionInput('Visibility', ['private', 'friends', 'public'], visibility);
+  dom.appendChild(MarginBox(visibilityOptionInput));
+
+  visibilityOptionInput.addEventListener('option-selected', (e) => {
+    visibility = e.detail.option;
+  });
 
   let tags = meta.tags;
   const tagEditor = TagEditor(allTags, meta.tags);

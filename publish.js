@@ -249,6 +249,18 @@ export async function publishEntry(entryUrl, token, inlineCss) {
     body: entryHtml,
   });
 
+  let aclText = 'email\tanders@apitman.com\town\n';
+
+  if (meta.visibility === 'public') {
+    aclText += 'builtin\tpublic\tread\n';
+  }
+
+  const aclUrl = entryUrl + '.gemdrive-acl.tsv';
+  await fetch(aclUrl + '?access_token=' + token, {
+    method: 'PUT',
+    body: aclText,
+  });
+
   return { meta, content: contentHtml, entryUrl };
 }
 
@@ -296,6 +308,10 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
 
   let entryListHtml = '';
   for (const entry of sortedEntries) {
+
+    if (entry.meta.visibility !== 'public') {
+      continue;
+    }
 
     const content = entry.content.length < 1024 ? entry.content : '';
 

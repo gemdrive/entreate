@@ -72,6 +72,42 @@ export function MarginBox(child) {
   return dom;
 }
 
+export function OptionInput(label, options, initialOption) {
+  const dom = el('div');
+  dom.classList.add('option-input');
+
+  const labelEl = el('div');
+  labelEl.classList.add('option-input__label');
+  labelEl.innerText = label + ':';
+  dom.appendChild(labelEl);
+
+  const select = el('select', {
+    onchange: (e) => {
+      select.dispatchEvent(new CustomEvent('option-selected', {
+        bubbles: true,
+        detail: {
+          option: select.value,
+        },
+      }));
+    },
+  });
+
+  dom.appendChild(select);
+
+  for (const option of options) {
+    const optionEl = el('option');
+    optionEl.setAttribute('value', option);
+    optionEl.innerText = option;
+    select.appendChild(optionEl);
+  }
+
+  if (initialOption) {
+    select.value = initialOption;
+  }
+
+  return dom;
+}
+
 export async function* entryIterator(entriesDirUrl, token, comparator) {
 
   const db = await fetch(`${entriesDirUrl}db.json?access_token=${token}`)

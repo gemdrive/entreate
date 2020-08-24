@@ -228,7 +228,8 @@ function EntryListItem(entryUrl, token) {
 
     const nameEl = el('div');
     topRow.appendChild(nameEl);
-    nameEl.innerText = '[' +entryId + '] ' + meta.title + ' (' + meta.timestamp + ')';
+    const visibility = meta.visibility ? meta.visibility : 'private';
+    nameEl.innerText = '[' +entryId + '] ' + meta.title + ' (' + meta.timestamp + ')' + ' *' + visibility;
 
     const btnContainer = el('div');
     topRow.appendChild(btnContainer);
