@@ -33,6 +33,8 @@ const analyticsHtml = `
     async src="//gc.zgo.at/count.js"></script>
 `;
 
+const minimalFavicon = '<link rel="icon" href="data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==">';
+
 export async function publishAllEntries(driveUri, src, token) {
 
   console.log("Begin Publishing");
@@ -63,6 +65,8 @@ export async function publishAllEntries(driveUri, src, token) {
           <meta name="viewport" content="width=device-width, initial-scale=1" />
 
           <title>Anders' little corner of the internet</title>
+
+          ${minimalFavicon}
 
           <style>
             ${inlineCss}
@@ -176,6 +180,8 @@ export async function publishEntry(entryUrl, token, inlineCss) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <title>${meta.title}</title>
+
+        ${minimalFavicon}
 
         <style>
           ${inlineCss}
@@ -329,6 +335,8 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <title>Anders' little corner of the internet</title>
+
+        ${minimalFavicon}
 
         <style>
           ${inlineCss}
