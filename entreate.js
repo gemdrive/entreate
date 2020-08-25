@@ -252,19 +252,19 @@ function EntryListItem(entryUrl, token) {
       }));
     });
 
-    const deleteButton = el('button', {
-      onclick: () => {
-        dom.dispatchEvent(new CustomEvent('entry-delete', {
-          bubbles: true,
-          detail: {
-            entryUrl,
-          },
-        }));
-      },
-      classList: ['entreate-button'],
-    });
-    deleteButton.innerText = "Delete";
-    btnContainer.appendChild(deleteButton);
+    //const deleteButton = el('button', {
+    //  onclick: () => {
+    //    dom.dispatchEvent(new CustomEvent('entry-delete', {
+    //      bubbles: true,
+    //      detail: {
+    //        entryUrl,
+    //      },
+    //    }));
+    //  },
+    //  classList: ['entreate-button'],
+    //});
+    //deleteButton.innerText = "Delete";
+    //btnContainer.appendChild(deleteButton);
 
 
     const tagList = TagList(meta.tags);
