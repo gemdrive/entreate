@@ -250,12 +250,17 @@ export async function publishEntry(entryUrl, token, inlineCss) {
   });
 
   if (meta.visibility !== 'public') {
-    const aclText = 'email\tanders@apitman.com\town\n';
 
-    const aclUrl = entryUrl + '.gemdrive-acl.tsv';
+    const aclUrl = entryUrl + '.gemdrive-acl.json';
     await fetch(aclUrl + '?access_token=' + token, {
       method: 'PUT',
-      body: aclText,
+      body: JSON.stringify([
+        {
+          idType: 'email',
+          id: 'anders@apitman.com',
+          perm: 'own',
+        },
+      ], null, 2),
     });
   }
 
