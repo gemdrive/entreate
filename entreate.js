@@ -172,6 +172,7 @@ function EntryList(entriesDirUrl, token) {
           bubbles: true,
         }));
       },
+      classList: ['entreate-button'],
     });
     createEntryButton.innerText = "Create entry";
     dom.appendChild(createEntryButton);
@@ -182,6 +183,7 @@ function EntryList(entriesDirUrl, token) {
           bubbles: true,
         }));
       },
+      classList: ['entreate-button'],
     });
     publishAllBtn.innerText = "Publish All";
     dom.appendChild(publishAllBtn);
@@ -234,7 +236,9 @@ function EntryListItem(entryUrl, token) {
     const btnContainer = el('div');
     topRow.appendChild(btnContainer);
 
-    const editButton = el('button');
+    const editButton = el('button', {
+      classList: ['entreate-button'],
+    });
     editButton.innerText = "Edit";
     btnContainer.appendChild(editButton);
 
@@ -257,6 +261,7 @@ function EntryListItem(entryUrl, token) {
           },
         }));
       },
+      classList: ['entreate-button'],
     });
     deleteButton.innerText = "Delete";
     btnContainer.appendChild(deleteButton);

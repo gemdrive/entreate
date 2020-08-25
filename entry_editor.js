@@ -12,6 +12,7 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
         bubbles: true,
       }));
     },
+    classList: ['entreate-button'],
   });
   homeButton.innerText = 'Home';
   dom.appendChild(homeButton);
@@ -33,6 +34,7 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
         },
       }));
     },
+    classList: ['entreate-button'],
   });
   saveButton.classList.add('entreate-button', 'entreate-button-confirm');
   saveButton.innerText = 'Save';
@@ -61,6 +63,7 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
       fontSize -= 1;
       textContainer.style['font-size'] = fontSize + 'px';
     },
+    classList: ['entreate-button'],
   });
   decreaseFontBtn.innerText = "- Font size";
   dom.appendChild(decreaseFontBtn);
@@ -69,6 +72,7 @@ export function EntryEditor(entryUrl, text, meta, allTags) {
       fontSize += 1;
       textContainer.style['font-size'] = fontSize + 'px';
     },
+    classList: ['entreate-button'],
   });
   increaseFontBtn.innerText = "+ Font size";
   dom.appendChild(increaseFontBtn);

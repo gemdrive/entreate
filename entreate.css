@@ -3,6 +3,22 @@
   --highlight-color: #ddd;
 }
 
+.entreate-button {
+  padding: .5em 1em;
+  margin: 5px;
+  border: 2px solid #555555;
+  color: #fff;
+  background-color: #555555;
+  text-decoration: none;
+  user-select: none;
+  cursor: pointer;
+}
+.entreate-button:hover {
+  color: #555555;
+  background-color: #fff;
+  border: 2px solid #555555;
+}
+
 .entreate-entry-editor__text {
   border: var(--border);
 }
