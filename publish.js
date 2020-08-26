@@ -29,7 +29,7 @@ const importsHtml = `
 `;
 
 const analyticsHtml = `
-  <script data-goatcounter="https://anderspitman_net.goatcounter.com/count"
+  <script data-goatcounter="https://stats.apitman.com/count"
     async src="//gc.zgo.at/count.js"></script>
 `;
 
