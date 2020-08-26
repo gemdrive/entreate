@@ -198,6 +198,7 @@ export async function publishEntry(entryUrl, token, inlineCss) {
             <div class='entry__header'>
               <h1>${meta.title}</h1>
               <h2>${meta.timestamp}</h2>
+              ${genTagsHtml(meta.tags)}
             </div>
             <div class='entry__content'>
               ${contentHtml}
@@ -323,7 +324,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
     const urlName = entry.meta.urlName ? entry.meta.urlName : entry.meta.title
       .toLowerCase().replace(/ /g, '-').replace("'", '');
 
-    const template = `
+    const entryHtml = `
       <div class='entry-list__entry'>
         <div class='list-entry'>
           <div class='list-entry__controls'>
@@ -335,6 +336,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
             <div class='entry__header'>
               <h1>${entry.meta.title}</h1>
             </div>
+            ${genTagsHtml(entry.meta.tags)}
             <div class='entry__content'>
               ${content}
             </div>
@@ -343,7 +345,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
       </div>
     `;
 
-    entryListHtml += template;
+    entryListHtml += entryHtml;
   }
 
   const feedHtml = `
@@ -387,4 +389,21 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
     method: 'PUT',
     body: feedHtml,
   });
+}
+
+function genTagsHtml(tags) {
+  let tagsHtml = '';
+  for (const tag of tags) {
+    tagsHtml += `
+      <div class='tag-list__tag'>
+        ${tag}
+      </div>
+    `;
+  }
+
+  return  `
+    <div class='tag-list'>
+      ${tagsHtml}
+    </div>
+  `;
 }
