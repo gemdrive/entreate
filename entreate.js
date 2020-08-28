@@ -4,7 +4,7 @@ import { EntryEditor } from './entry_editor.js';
 import { TagList } from './tag_editor.js';
 
 
-function Entreate(driveUri, path, token) {
+function Entreate(path, token) {
   const dom = document.createElement('div');
   dom.classList.add('entreate');
 
@@ -18,13 +18,13 @@ function Entreate(driveUri, path, token) {
   dom.appendChild(contentEl);
 
 
-  const entriesDirUrl = driveUri + path;
+  const entriesDirUrl = path;
 
   let newEntry = false;
 
   async function navigate(page, data) {
 
-    const dbUrl = driveUri + path + 'db.json?access_token=' + token;
+    const dbUrl = path + 'db.json?access_token=' + token;
     const response = await fetch(dbUrl);
 
     let db;
@@ -78,7 +78,7 @@ function Entreate(driveUri, path, token) {
 
         entryList.addEventListener('create-entry', async (e) => {
 
-          const entryUrl = await initEntry(dom, driveUri, path, token);
+          const entryUrl = await initEntry(dom, path, token);
 
           if (entryUrl) {
             navigate('/editor', {
@@ -94,13 +94,13 @@ function Entreate(driveUri, path, token) {
         });
 
         entryList.addEventListener('publish-all', async (e) => {
-          const res = await fetch(driveUri + path + 'tmp?access_token=' + token, {
+          const res = await fetch(path + 'tmp?access_token=' + token, {
             method: 'PUT',
             body: '',
           });
 
           if (res.status === 200) {
-            publishAllEntries(driveUri, path, token);
+            publishAllEntries(path, token);
           }
           else if (res.status === 403) {
             dom.dispatchEvent(new CustomEvent('do-auth', {
@@ -287,15 +287,15 @@ function EntryListItem(entryUrl, token) {
 }
 
 
-async function initEntry(dom, driveUri, path, token) {
+async function initEntry(dom, path, token) {
 
-  const dbUrl = `${driveUri + path}db.json?access_token=${token}`;
+  const dbUrl = `${path}db.json?access_token=${token}`;
 
   const db = await fetch(dbUrl)
     .then(r => r.json());
 
   const entryId = db.lastId + 1;
-  const entryDirUrl = driveUri + path + idToPath(entryId);
+  const entryDirUrl = path + idToPath(entryId);
   console.log(entryDirUrl);
 
   const createDateDirUrl = entryDirUrl + '?recursive=true&access_token=' + token;

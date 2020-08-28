@@ -59,27 +59,20 @@
 
         const token = localStorage.getItem('access_token');
 
-        let driveUri = urlParams.get('drive');
-        if (!driveUri) {
-          driveUri = prompt("Enter a drive URI");
-          urlParams.set('drive', driveUri);
+        let dir = urlParams.get('dir');
+        if (!dir) {
+          dir = prompt(`Enter a path to the source directory`);
+          urlParams.set('dir', dir);
           history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
         }
 
-        let src = urlParams.get('src');
-        if (!src) {
-          src = prompt(`Enter a path to the source directory on ${driveUri}`);
-          urlParams.set('src', src);
-          history.pushState(null, '', window.location.pathname + '?' + decodeURIComponent(urlParams.toString()));
-        }
-
-        const entreateEl = Entreate(driveUri, src, token);
+        const entreateEl = Entreate(dir, token);
 
         entreateEl.addEventListener('do-auth', async (e) => {
           const email = prompt("Enter email to authorize:");
           const code = Math.floor(Math.random() * 1000);
 
-          const res = await fetch(driveUri + src + `.gemdrive-auth?id=${email}&perm=own&code=${code}`, {
+          const res = await fetch(dir + `.gemdrive-auth?id=${email}&perm=own&code=${code}`, {
             method: 'POST',
           });
 

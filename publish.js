@@ -35,14 +35,14 @@ const analyticsHtml = `
 
 const minimalFavicon = '<link rel="icon" href="data:image/gif;base64,R0lGODlhEAAQAAAAACwAAAAAAQABAAACASgAOw==">';
 
-export async function publishAllEntries(driveUri, src, token) {
+export async function publishAllEntries(src, token) {
 
   console.log("Begin Publishing");
 
   (async () => {
 
 
-    const themeCssUrl = driveUri + src + 'theme.css?access_token=' + token;
+    const themeCssUrl = src + 'theme.css?access_token=' + token;
     const themeCss = await fetch(themeCssUrl).then(r => r.text());
 
     const hlCssUrl = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.1.2/build/styles/tomorrow-night.min.css';
@@ -51,7 +51,7 @@ export async function publishAllEntries(driveUri, src, token) {
     const inlineCss = themeCss + hlCss;
 
     await publishAboutPage(inlineCss);
-    await publishFeedPage(driveUri, src, token, inlineCss);
+    await publishFeedPage(src, token, inlineCss);
 
     console.log("Done Publishing");
   })();
@@ -123,11 +123,11 @@ export async function publishAllEntries(driveUri, src, token) {
       </html>
     `;
 
-    await fetch(driveUri + src + 'about/?access_token=' + token, {
+    await fetch(src + 'about/?access_token=' + token, {
       method: 'PUT',
     });
 
-    await fetch(driveUri + src + 'about/index.html?access_token=' + token, {
+    await fetch(src + 'about/index.html?access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
@@ -136,15 +136,15 @@ export async function publishAllEntries(driveUri, src, token) {
     // I'm using a bit of a hack here. The template string above uses ../ to
     // access a couple resources, but it works for the root page as well
     // since the browser stops at the top level.
-    await fetch(driveUri + src + 'index.html?access_token=' + token, {
+    await fetch(src + 'index.html?access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
 
-    const portraitBlob = await fetch(driveUri + src + 'portrait.jpg?access_token=' + token)
+    const portraitBlob = await fetch(src + 'portrait.jpg?access_token=' + token)
       .then(r => r.blob());
 
-    await fetch(driveUri + src + 'portrait.jpg?access_token=' + token, {
+    await fetch(src + 'portrait.jpg?access_token=' + token, {
       method: 'PUT',
       body: portraitBlob,
     });
@@ -268,13 +268,13 @@ export async function publishEntry(entryUrl, token, inlineCss) {
   return { meta, content: contentHtml, entryUrl };
 }
 
-export async function publishFeedPage(driveUri, src, token, inlineCss) {
+export async function publishFeedPage(src, token, inlineCss) {
 
 
   const allTags = {};
 
   const allEntries = [];
-  for await (const entryUrl of entryIterator(driveUri + src, token)) {
+  for await (const entryUrl of entryIterator(src, token)) {
     const entry = await publishEntry(entryUrl, token, inlineCss);
 
     if (entry) {
@@ -283,7 +283,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
           allTags[tag] = [];
         }
 
-        const entryPath = entryUrl.slice((driveUri + src).length);
+        const entryPath = entryUrl.slice((src).length);
         const entryId = entryPathToId(entryPath);
 
         allTags[tag].push(entryId);
@@ -293,7 +293,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
     }
   }
 
-  const dbUrl = `${driveUri + src}db.json?access_token=${token}`;
+  const dbUrl = `${src}db.json?access_token=${token}`;
   const db = await fetch(dbUrl)
     .then(r => r.json());
 
@@ -319,7 +319,7 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
 
     const content = entry.content.length < 1024 ? entry.content : '';
 
-    const entryPath = entry.entryUrl.slice((driveUri + src).length);
+    const entryPath = entry.entryUrl.slice((src).length);
 
     const urlName = entry.meta.urlName ? entry.meta.urlName : entry.meta.title
       .toLowerCase().replace(/ /g, '-').replace("'", '');
@@ -381,11 +381,11 @@ export async function publishFeedPage(driveUri, src, token, inlineCss) {
     </html>
   `;
 
-  await fetch(driveUri + src + 'feed/?access_token=' + token, {
+  await fetch(src + 'feed/?access_token=' + token, {
     method: 'PUT',
   });
 
-  await fetch(driveUri + src + 'feed/index.html?access_token=' + token, {
+  await fetch(src + 'feed/index.html?access_token=' + token, {
     method: 'PUT',
     body: feedHtml,
   });
