@@ -77,17 +77,10 @@
 
         entreateEl.addEventListener('do-auth', async (e) => {
           const email = prompt("Enter email to authorize:");
+          const code = Math.floor(Math.random() * 1000);
 
-          const res = await fetch(driveUri + src + '.gemdrive-authorize.json', {
+          const res = await fetch(driveUri + src + `.gemdrive-auth?id=${email}&perm=own&code=${code}`, {
             method: 'POST',
-            body: JSON.stringify({
-              idType: 'email',
-              id: email,
-              perms: {
-                '/': 'own',
-              },
-              code: Math.floor(Math.random() * 1000),
-            }),
           });
 
           if (res.status === 200) {
