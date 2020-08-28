@@ -94,7 +94,19 @@ function Entreate(driveUri, path, token) {
         });
 
         entryList.addEventListener('publish-all', async (e) => {
-          publishAllEntries(driveUri, path, token);
+          const res = await fetch(driveUri + path + 'tmp?access_token=' + token, {
+            method: 'PUT',
+            body: '',
+          });
+
+          if (res.status === 200) {
+            publishAllEntries(driveUri, path, token);
+          }
+          else if (res.status === 403) {
+            dom.dispatchEvent(new CustomEvent('do-auth', {
+              bubbles: true,
+            }));
+          }
         });
         break;
       }

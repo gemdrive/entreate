@@ -27,7 +27,6 @@
 
     <div class='content'></div>
 
-    <script src='https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-auth-client@0.8.0/dist/umd.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.56.0/lib/codemirror.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.56.0/mode/markdown/markdown.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -58,11 +57,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
 
-        if (urlParams.has('code') && urlParams.has('state')) {
-          const { accessToken, state } = await window.gemdriveAuthClient.completeAuthorization();
-          localStorage.setItem('access_token', accessToken);
-        }
-
         const token = localStorage.getItem('access_token');
 
         let driveUri = urlParams.get('drive');
@@ -81,18 +75,30 @@
 
         const entreateEl = Entreate(driveUri, src, token);
 
-        entreateEl.addEventListener('do-auth', (e) => {
-          gemdriveAuthClient.authorize({
-            driveUri,
-            perms: [
-              {
-                type: 'dir',
-                perm: 'own',
-                path: src,
+        entreateEl.addEventListener('do-auth', async (e) => {
+          const email = prompt("Enter email to authorize:");
+
+          const res = await fetch(driveUri + src + '.gemdrive-authorize.json', {
+            method: 'POST',
+            body: JSON.stringify({
+              idType: 'email',
+              id: email,
+              perms: {
+                '/': 'own',
               },
-            ],
-            state: driveUri,
+              code: Math.floor(Math.random() * 1000),
+            }),
           });
+
+          if (res.status === 200) {
+            const accessToken = await res.text();
+            localStorage.setItem('access_token', accessToken);
+            alert("Successfully authorized");
+            window.location.reload();
+          }
+          else {
+            alert("Authorization failed");
+          }
         });
 
         const content = document.querySelector('.content');
