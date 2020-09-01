@@ -78,14 +78,12 @@ function Entreate(path, token) {
 
         entryList.addEventListener('create-entry', async (e) => {
 
-          const entryUrl = await initEntry(dom, path, token);
+          const { entryUrl, meta } = await initEntry(dom, path, token);
 
           if (entryUrl) {
             navigate('/editor', {
               entryUrl,
-              meta: {
-                tags: [],
-              },
+              meta,
             });
           }
           else {
@@ -351,7 +349,7 @@ async function initEntry(dom, path, token) {
     body: JSON.stringify(meta, null, 2),
   });
 
-  return entryDirUrl;
+  return { entryUrl: entryDirUrl, meta };
 }
 
 function genNextEntryName(gemData) {
