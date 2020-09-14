@@ -18,8 +18,8 @@ const navHtml = `
 
 const entryNavHtml = `
   <nav class='semi-transparent'>
-    <a class='nav-btn' href='../../../../feed/'>Feed</a>
-    <a class='nav-btn' href='../../../../about/'>About</a>
+    <a class='nav-btn' href='../feed/'>Feed</a>
+    <a class='nav-btn' href='../about/'>About</a>
   </nav>
 `;
 
