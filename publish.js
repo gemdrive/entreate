@@ -307,7 +307,7 @@ export async function publishFeedPage(src, token, inlineCss) {
   // sort in reverse-chronological order (the key is the entry id, which
   // increases monotonically).
   const sortedEntries = allEntries.slice()
-    .sort((a, b) => naturalSorter.compare(a.meta.id, b.meta.id))
+    .sort((a, b) => naturalSorter.compare(a.meta.timestamp, b.meta.timestamp))
     .reverse();
 
   let entryListHtml = '';
