@@ -69,22 +69,37 @@
         const entreateEl = Entreate(dir, token);
 
         entreateEl.addEventListener('do-auth', async (e) => {
-          const email = prompt("Enter email to authorize:");
-          const code = Math.floor(Math.random() * 1000);
 
-          const res = await fetch(dir + `.gemdrive-auth?id=${email}&perm=own&code=${code}`, {
+
+          const dest = dir;
+
+          const email = prompt("Email to authorize:");
+
+          const authUrl = dest + 'gemdrive/authorize';
+
+          let res = await fetch(authUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+              idType: 'email',
+              id: email,
+              perm: 'write',
+              path: '/',
+            }),
+          });
+
+          const requestId = await res.text();
+
+          const code = prompt("Check email for code:");
+
+          res = await fetch(`${authUrl}?id=${requestId}&code=${code}`, {
             method: 'POST',
           });
 
-          if (res.status === 200) {
-            const accessToken = await res.text();
-            localStorage.setItem('access_token', accessToken);
-            alert("Successfully authorized");
-            window.location.reload();
-          }
-          else {
-            alert("Authorization failed");
-          }
+          const accessToken = await res.text();
+          localStorage.setItem('access_token', accessToken);
+
+          window.location.reload();
+
         });
 
         const content = document.querySelector('.content');

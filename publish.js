@@ -81,7 +81,7 @@ export async function publishAllEntries(src, token) {
 
             <div id='portrait-container'>
               <div class='portrait'>
-                <img src="../portrait.jpg.gemdrive-img-512.jpg" width="100%">
+                <img src="../gemdrive/images/512/portrait.jpg" width="100%">
               </div>
             </div>
             <div class='text-content semi-transparent'>
@@ -123,11 +123,11 @@ export async function publishAllEntries(src, token) {
       </html>
     `;
 
-    await fetch(src + 'about/?access_token=' + token, {
+    await fetch(src + 'about/?recursive=true&access_token=' + token, {
       method: 'PUT',
     });
 
-    await fetch(src + 'about/index.html?access_token=' + token, {
+    await fetch(src + 'about/index.html?overwrite=true&access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
@@ -136,7 +136,7 @@ export async function publishAllEntries(src, token) {
     // I'm using a bit of a hack here. The template string above uses ../ to
     // access a couple resources, but it works for the root page as well
     // since the browser stops at the top level.
-    await fetch(src + 'index.html?access_token=' + token, {
+    await fetch(src + 'index.html?overwrite=true&access_token=' + token, {
       method: 'PUT',
       body: aboutHtml,
     });
@@ -144,7 +144,7 @@ export async function publishAllEntries(src, token) {
     const portraitBlob = await fetch(src + 'portrait.jpg?access_token=' + token)
       .then(r => r.blob());
 
-    await fetch(src + 'portrait.jpg?access_token=' + token, {
+    await fetch(src + 'portrait.jpg?overwrite=true&access_token=' + token, {
       method: 'PUT',
       body: portraitBlob,
     });
@@ -245,15 +245,15 @@ export async function publishEntry(entryUrl, token, inlineCss) {
   `;
 
   const indexHtmlUrl = entryUrl + 'index.html';
-  await fetch(indexHtmlUrl + '?access_token=' + token, {
+  await fetch(indexHtmlUrl + '?overwrite=true&access_token=' + token, {
     method: 'PUT',
     body: entryHtml,
   });
 
   if (meta.visibility !== 'public') {
 
-    const aclUrl = entryUrl + '.gemdrive-acl.json';
-    await fetch(aclUrl + '?access_token=' + token, {
+    const aclUrl = entryUrl + 'gemdrive/acl.json';
+    await fetch(aclUrl + '?overwrite=true&access_token=' + token, {
       method: 'PUT',
       body: JSON.stringify([
         {
@@ -293,7 +293,7 @@ export async function publishFeedPage(src, token, inlineCss) {
     }
   }
 
-  const dbUrl = `${src}db.json?access_token=${token}`;
+  const dbUrl = `${src}db.json?overwrite=true&access_token=${token}`;
   const db = await fetch(dbUrl)
     .then(r => r.json());
 
@@ -381,11 +381,11 @@ export async function publishFeedPage(src, token, inlineCss) {
     </html>
   `;
 
-  await fetch(src + 'feed/?access_token=' + token, {
+  await fetch(src + 'feed/?recursive=true&access_token=' + token, {
     method: 'PUT',
   });
 
-  await fetch(src + 'feed/index.html?access_token=' + token, {
+  await fetch(src + 'feed/index.html?overwrite=true&access_token=' + token, {
     method: 'PUT',
     body: feedHtml,
   });

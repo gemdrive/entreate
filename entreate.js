@@ -92,9 +92,9 @@ function Entreate(path, token) {
         });
 
         entryList.addEventListener('publish-all', async (e) => {
-          const res = await fetch(path + 'tmp?access_token=' + token, {
+          const res = await fetch(path + 'tmp?overwrite=true&access_token=' + token, {
             method: 'PUT',
-            body: '',
+            body: 'dummy file',
           });
 
           if (res.status === 200) {
