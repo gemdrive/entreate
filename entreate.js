@@ -127,7 +127,7 @@ function Entreate(path, token) {
 
           let entryFileUrl = entryUrl + 'entry.md';
 
-          fetch(entryFileUrl, {
+          fetch(entryFileUrl + '?overwrite=true', {
             method: 'PUT',
             headers,
             body: text,
@@ -135,7 +135,7 @@ function Entreate(path, token) {
 
           let metaFileUrl = entryUrl + 'entry.json';
 
-          fetch(metaFileUrl, {
+          fetch(metaFileUrl + '?overwrite=true', {
             method: 'PUT',
             headers,
             body: JSON.stringify(meta, null, 2),
