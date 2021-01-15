@@ -317,7 +317,7 @@ async function initEntry(dom, path, token) {
   }
 
   db.lastId = entryId;
-  const dbPutRes = await fetch(dbUrl, {
+  const dbPutRes = await fetch(dbUrl + '&overwrite=true', {
     method: 'PUT',
     body: JSON.stringify(db, null, 2),
   });
