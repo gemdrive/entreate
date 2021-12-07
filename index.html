@@ -71,32 +71,35 @@
         entreateEl.addEventListener('do-auth', async (e) => {
 
 
-          const dest = dir;
+          //const dest = dir;
 
-          const email = prompt("Email to authorize:");
+          //const email = prompt("Email to authorize:");
 
-          const authUrl = dest + 'gemdrive/authorize';
+          //const authUrl = dest + 'gemdrive/authorize';
 
-          let res = await fetch(authUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-              idType: 'email',
-              id: email,
-              perm: 'write',
-              path: '/',
-            }),
-          });
+          //let res = await fetch(authUrl, {
+          //  method: 'POST',
+          //  body: JSON.stringify({
+          //    idType: 'email',
+          //    id: email,
+          //    perm: 'write',
+          //    path: '/',
+          //  }),
+          //});
 
-          const requestId = await res.text();
+          //const requestId = await res.text();
 
-          const code = prompt("Check email for code:");
+          //const code = prompt("Check email for code:");
 
-          res = await fetch(`${authUrl}?id=${requestId}&code=${code}`, {
-            method: 'POST',
-          });
+          //res = await fetch(`${authUrl}?id=${requestId}&code=${code}`, {
+          //  method: 'POST',
+          //});
 
-          const accessToken = await res.text();
-          localStorage.setItem('access_token', accessToken);
+          //const accessToken = await res.text();
+          //localStorage.setItem('access_token', accessToken);
+
+          const key = prompt("Enter key:");
+          localStorage.setItem('access_token', key);
 
           window.location.reload();
 

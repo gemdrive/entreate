@@ -170,7 +170,7 @@ export async function publishEntry(entryUrl, token, inlineCss) {
   const textResponse = await fetch(textUrl + '?access_token=' + token);
   const text = await textResponse.text();
 
-  const contentHtml = marked(text);
+  const contentHtml = marked.parse(text);
 
   const entryHtml = `
     <!doctype html>
