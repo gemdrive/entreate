@@ -99,10 +99,10 @@ export async function publishAllEntries(src, token) {
               </p>
             
               <section class='contact-links'>
-                <a target="_blank" href="https://github.com/anderspitman">GitHub</a>
-                <a target="_blank" href="https://stackoverflow.com/users/943814/anderspitman">StackOverflow</a>
-                <a target="_blank" href="https://www.linkedin.com/in/anderspitman/">LinkedIn</a>
-                <a target="_blank" href="https://twitter.com/anderspitman">Twitter</a>
+                <a target="_blank" href="https://github.com/anderspitman" rel="me">GitHub</a>
+                <a target="_blank" href="https://stackoverflow.com/users/943814/anderspitman" rel="me">StackOverflow</a>
+                <a target="_blank" href="https://www.linkedin.com/in/anderspitman/" rel="me">LinkedIn</a>
+                <a target="_blank" href="https://twitter.com/anderspitman" rel="me">Twitter</a>
               </section>
             
               <!--
